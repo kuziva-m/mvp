@@ -12,7 +12,8 @@ npm run dev
 
 - [x] Prompt 1: Initial Next.js setup ✅
 - [x] Prompt 2: Database setup ✅
-- [ ] Prompt 3: Database schema
+- [x] Prompt 3: Database schema ✅
+- [ ] Prompt 4: Lead entry form
 - [ ] ... (52 total)
 
 ## Tech Stack
