@@ -74,9 +74,8 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const { data, error } = await query('leads', {
-      orderBy: { column: 'created_at', ascending: false },
-    })
+    // Fetch all leads (sorting will be done client-side)
+    const { data, error } = await query('leads')
 
     if (error) {
       console.error('Failed to fetch leads:', error)
