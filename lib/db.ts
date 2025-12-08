@@ -223,9 +223,16 @@ export async function testConnection(): Promise<boolean> {
   try {
     const { error } = await supabase.from('leads').select('count').limit(1)
 
-    if (error) {
+    // PGRST205 means table doesn't exist - but connection works!
+    if (error && error.code !== 'PGRST205') {
       console.error('Database connection test failed:', error)
       return false
+    }
+
+    // If error is PGRST205, connection is working, tables just don't exist yet
+    if (error && error.code === 'PGRST205') {
+      console.log('✅ Database connected (tables not created yet)')
+      return true
     }
 
     console.log('✅ Database connection successful')
