@@ -1,10 +1,9 @@
-// Load environment variables
-import { config } from 'dotenv'
+// MUST load environment variables FIRST before any other imports
+import dotenv from 'dotenv'
 import { join } from 'path'
+dotenv.config({ path: join(process.cwd(), '.env.local') })
 
-// Load from project root
-config({ path: join(process.cwd(), '.env.local') })
-
+// Now we can import modules that depend on env vars
 import { supabase } from '../lib/supabase'
 
 async function verifySchema() {
@@ -30,7 +29,7 @@ async function verifySchema() {
 
   for (const table of tables) {
     const { error } = await supabase.from(table).select('count').limit(1)
-    
+
     if (error) {
       console.log(`❌ ${table}: ${error.message}`)
       failCount++
@@ -41,7 +40,7 @@ async function verifySchema() {
   }
 
   console.log(`\n📊 Results: ${successCount} tables created, ${failCount} failed`)
-  
+
   if (failCount === 0) {
     console.log('🎉 All tables created successfully!')
   }

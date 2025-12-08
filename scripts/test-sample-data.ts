@@ -1,11 +1,9 @@
-// Load environment variables from .env.local
-import { config } from 'dotenv'
+// MUST load environment variables FIRST before any other imports
+import dotenv from 'dotenv'
 import { join } from 'path'
+dotenv.config({ path: join(process.cwd(), '.env.local') })
 
-// Load from project root
-config({ path: join(process.cwd(), '.env.local') })
-
-// Now import other modules
+// Now we can import modules that depend on env vars
 import { supabase } from '../lib/supabase'
 import { insert, query } from '../lib/db'
 
