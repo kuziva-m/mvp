@@ -1,9 +1,23 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { count } from '@/lib/db'
 
-export default function AdminHome() {
+export const dynamic = 'force-dynamic'
+
+export default async function AdminHome() {
+  const { count: leadsCount } = await count('leads')
+  const { count: sitesCount } = await count('sites')
+  const { count: subscribersCount } = await count('subscriptions', { status: 'active' })
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <Link href="/admin/leads/new">
+          <Button>Add New Lead</Button>
+        </Link>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         <Card>
@@ -12,17 +26,17 @@ export default function AdminHome() {
             <CardDescription>All time</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">0</p>
+            <p className="text-4xl font-bold">{leadsCount || 0}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Websites Generated</CardTitle>
-            <CardDescription>This month</CardDescription>
+            <CardDescription>All time</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">0</p>
+            <p className="text-4xl font-bold">{sitesCount || 0}</p>
           </CardContent>
         </Card>
 
@@ -32,10 +46,10 @@ export default function AdminHome() {
             <CardDescription>Subscribed</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">0</p>
+            <p className="text-4xl font-bold">{subscribersCount || 0}</p>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
+  )
 }

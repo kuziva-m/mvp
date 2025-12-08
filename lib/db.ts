@@ -16,14 +16,16 @@ export async function query<T = any>(
     // Apply filters if provided
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        queryBuilder = queryBuilder.eq(key, value)
+        if (value !== undefined && value !== null) {
+          queryBuilder = queryBuilder.eq(key, value)
+        }
       })
     }
 
     const { data, error } = await queryBuilder
 
     if (error) {
-      console.error(`Query error on ${table}:`, error)
+      console.error(`Query error on ${table}:`, error.message || error)
       return { data: null, error }
     }
 

@@ -8,7 +8,7 @@ export default async function Home() {
   const dbConnected = await testConnection()
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-8">
+    <main className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">MVP Web Agency</h1>
