@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { testConnection } from "@/lib/db";
 
-export default function Home() {
+export default async function Home() {
+  // Test database connection on page load
+  const dbConnected = await testConnection()
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
@@ -37,15 +41,17 @@ export default function Home() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Database</span>
-                  <span className="text-sm font-medium text-green-600">Connected</span>
+                  <span className={`text-sm font-medium ${dbConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {dbConnected ? 'Connected ✓' : 'Disconnected ✗'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Redis</span>
-                  <span className="text-sm font-medium text-green-600">Connected</span>
+                  <span className="text-sm text-gray-600">Next.js</span>
+                  <span className="text-sm font-medium text-green-600">Running ✓</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Claude API</span>
-                  <span className="text-sm font-medium text-green-600">Ready</span>
+                  <span className="text-sm text-gray-600">Environment</span>
+                  <span className="text-sm font-medium text-blue-600">Development</span>
                 </div>
               </div>
             </div>
@@ -53,7 +59,7 @@ export default function Home() {
         </div>
 
         <div className="mt-12 text-center text-sm text-gray-500">
-          <p>Next.js 15 • TypeScript • Tailwind CSS • shadcn/ui</p>
+          <p>Next.js 15 • TypeScript • Tailwind CSS • shadcn/ui • Supabase</p>
         </div>
       </div>
     </main>
