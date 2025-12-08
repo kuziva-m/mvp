@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Mail, MailOpen, MousePointerClick, Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getById, query } from '@/lib/db'
-import type { Lead, Site } from '@/types'
+import type { Lead, Site, EmailLog } from '@/types'
 import GenerateWebsiteButton from '@/components/GenerateWebsiteButton'
+import SendEmailButton from '@/components/SendEmailButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,12 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   // Check if site already exists
   const { data: sites } = await query<Site>('sites', { lead_id: id })
   const existingSite = sites && sites.length > 0 ? sites[0] : null
+
+  // Get email logs
+  const { data: emailLogs } = await query<EmailLog>('email_logs', { lead_id: id })
+  const sortedEmailLogs = emailLogs?.sort((a, b) =>
+    new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime()
+  ) || []
 
   const STATUS_COLORS = {
     pending: 'bg-gray-100 text-gray-800',
@@ -268,13 +275,125 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
         </CardContent>
       </Card>
 
+      {/* Email Communication Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Communication</CardTitle>
+          <CardDescription>
+            Send emails and track engagement
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Email Status */}
+          <div>
+            <h3 className="font-semibold text-lg mb-4">Email Status</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className={`p-4 rounded-lg border-2 ${lead.email_sent_at ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Mail className={`h-5 w-5 ${lead.email_sent_at ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${lead.email_sent_at ? 'text-blue-900' : 'text-gray-600'}`}>Sent</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  {lead.email_sent_at ? format(new Date(lead.email_sent_at), 'MMM d, h:mm a') : 'Not sent'}
+                </p>
+              </div>
+
+              <div className={`p-4 rounded-lg border-2 ${lead.email_opened_at ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <MailOpen className={`h-5 w-5 ${lead.email_opened_at ? 'text-green-600' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${lead.email_opened_at ? 'text-green-900' : 'text-gray-600'}`}>Opened</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  {lead.email_opened_at ? format(new Date(lead.email_opened_at), 'MMM d, h:mm a') : 'Not opened'}
+                </p>
+              </div>
+
+              <div className={`p-4 rounded-lg border-2 ${lead.email_clicked_at ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <MousePointerClick className={`h-5 w-5 ${lead.email_clicked_at ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${lead.email_clicked_at ? 'text-emerald-900' : 'text-gray-600'}`}>Clicked</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  {lead.email_clicked_at ? format(new Date(lead.email_clicked_at), 'MMM d, h:mm a') : 'No clicks'}
+                </p>
+              </div>
+
+              <div className={`p-4 rounded-lg border-2 ${lead.email_replied_at ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Reply className={`h-5 w-5 ${lead.email_replied_at ? 'text-purple-600' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${lead.email_replied_at ? 'text-purple-900' : 'text-gray-600'}`}>Replied</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  {lead.email_replied_at ? format(new Date(lead.email_replied_at), 'MMM d, h:mm a') : 'No reply'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Email History */}
+          {sortedEmailLogs.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-lg mb-4">Email History</h3>
+              <div className="space-y-3">
+                {sortedEmailLogs.map((log) => (
+                  <div key={log.id} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium">{log.subject}</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Sent {format(new Date(log.sent_at), 'MMM d, yyyy h:mm a')}
+                        </p>
+                        <div className="flex gap-4 mt-2">
+                          {log.opened_at && (
+                            <span className="text-xs text-green-600">
+                              ✓ Opened {format(new Date(log.opened_at), 'MMM d, h:mm a')}
+                            </span>
+                          )}
+                          {log.clicked_at && (
+                            <span className="text-xs text-emerald-600">
+                              ✓ Clicked {format(new Date(log.clicked_at), 'MMM d, h:mm a')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {log.resend_message_id && (
+                        <span className="text-xs text-gray-500 font-mono">
+                          {log.resend_message_id.substring(0, 8)}...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Send Email Button */}
+          <div>
+            <SendEmailButton
+              leadId={id}
+              disabled={!existingSite || !lead.email}
+            />
+            {!existingSite && (
+              <p className="text-sm text-gray-500 mt-2">
+                Generate a website first before sending emails
+              </p>
+            )}
+            {!lead.email && (
+              <p className="text-sm text-red-500 mt-2">
+                Lead has no email address
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Coming Soon Card */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
           <h3 className="font-semibold text-lg mb-2">Coming Soon</h3>
           <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
             <li>Edit lead information</li>
-            <li>View email history</li>
             <li>Pause/resume automation</li>
             <li>Add notes and tasks</li>
           </ul>
