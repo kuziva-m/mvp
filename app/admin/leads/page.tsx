@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, Upload } from 'lucide-react'
 import { query } from '@/lib/db'
 import type { Lead } from '@/types'
 
@@ -26,12 +26,20 @@ export default async function LeadsPage() {
             Manage your business leads
           </p>
         </div>
-        <Link href="/admin/leads/new">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Lead
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/admin/leads/import">
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
+            </Button>
+          </Link>
+          <Link href="/admin/leads/new">
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Lead
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
@@ -48,13 +56,21 @@ export default async function LeadsPage() {
           {!hasLeads ? (
             <div className="text-center py-12 text-gray-500">
               <p className="text-lg mb-4">No leads yet</p>
-              <p className="mb-6">Get started by adding your first lead</p>
-              <Link href="/admin/leads/new">
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Your First Lead
-                </Button>
-              </Link>
+              <p className="mb-6">Get started by adding leads</p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/admin/leads/new">
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Manually
+                  </Button>
+                </Link>
+                <Link href="/admin/leads/import">
+                  <Button variant="outline">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import CSV
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -66,7 +82,7 @@ export default async function LeadsPage() {
                 <p className="mt-2">For now, you can:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>Add more leads manually</li>
-                  <li>Import leads via CSV (Prompt 6)</li>
+                  <li>Import leads via CSV</li>
                   <li>View leads in Supabase Dashboard</li>
                 </ul>
               </div>

@@ -1,0 +1,7 @@
+business_name,email,website,phone,industry
+Joe's Plumbing,joe@plumbing.com,https://joesplumbing.com,0400111222,plumbing
+Sarah's Cafe,sarah@cafe.com,,0400333444,cafe
+Bob Electric,bob@electric.com,https://bobelectric.com,,electrical
+Valid Test Co,valid@test.com,https://validtest.com,0400555666,consultant
+Invalid Email,notanemail,https://test.com,0400777888,retail
+Missing Industry,test@missing.com,https://missing.com,0400999000,
