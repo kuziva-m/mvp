@@ -144,3 +144,47 @@ export interface TicketMessage {
 export type LeadInput = Omit<Lead, 'id' | 'created_at' | 'updated_at'>
 export type SiteInput = Omit<Site, 'id' | 'created_at'>
 export type EmailTemplateInput = Omit<EmailTemplate, 'id' | 'created_at'>
+
+// Website generation types
+export interface ScrapedData {
+  logoUrl: string | null
+  colors: {
+    primary: string | null
+    secondary: string | null
+    text: string | null
+  }
+  headings: string[]
+  metaDescription: string | null
+  pageTitle: string | null
+  screenshot: string | null
+  scrapedAt: string
+}
+
+export interface GeneratedCopy {
+  heroHeadline: string
+  heroSubheadline: string
+  services: Array<{
+    title: string
+    description: string
+  }>
+  about: string
+  cta: string
+  tokensUsed: number
+  costUSD: number
+}
+
+export interface SiteContent {
+  businessName: string
+  industry: string
+  heroHeadline: string
+  heroSubheadline: string
+  services: Array<{ title: string; description: string }>
+  about: string
+  cta: string
+  colors?: {
+    primary: string
+    secondary: string
+    text: string
+  }
+  logoUrl?: string
+}

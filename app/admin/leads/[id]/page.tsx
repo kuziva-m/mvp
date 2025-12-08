@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { getById } from '@/lib/db'
-import type { Lead } from '@/types'
+import { getById, query } from '@/lib/db'
+import type { Lead, Site } from '@/types'
+import GenerateWebsiteButton from '@/components/GenerateWebsiteButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,10 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   if (error || !lead) {
     notFound()
   }
+
+  // Check if site already exists
+  const { data: sites } = await query<Site>('sites', { lead_id: id })
+  const existingSite = sites && sites.length > 0 ? sites[0] : null
 
   const STATUS_COLORS = {
     pending: 'bg-gray-100 text-gray-800',
@@ -225,6 +230,44 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
         </CardContent>
       </Card>
 
+      {/* Website Generation Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Website Generation</CardTitle>
+          <CardDescription>
+            Generate an AI-powered website for this lead
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {existingSite ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div>
+                  <p className="font-medium text-green-900">Website Generated</p>
+                  <p className="text-sm text-green-700">
+                    Template: <span className="capitalize">{existingSite.style}</span>
+                  </p>
+                </div>
+                <Link href={existingSite.preview_url || '#'}>
+                  <Button>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Preview
+                  </Button>
+                </Link>
+              </div>
+              <GenerateWebsiteButton leadId={id} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                No website has been generated yet. Click the button below to generate a custom website using AI.
+              </p>
+              <GenerateWebsiteButton leadId={id} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Coming Soon Card */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
@@ -234,7 +277,6 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
             <li>View email history</li>
             <li>Pause/resume automation</li>
             <li>Add notes and tasks</li>
-            <li>View generated site preview</li>
           </ul>
         </CardContent>
       </Card>
