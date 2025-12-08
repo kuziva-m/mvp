@@ -1,7 +1,9 @@
 // Load environment variables
 import { config } from 'dotenv'
-import { resolve } from 'path'
-config({ path: resolve(__dirname, '../.env.local') })
+import { join } from 'path'
+
+// Load from project root
+config({ path: join(process.cwd(), '.env.local') })
 
 import { supabase } from '../lib/supabase'
 
