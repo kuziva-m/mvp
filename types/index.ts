@@ -77,6 +77,7 @@ export interface Subscription {
   current_period_end: string | null
   cancel_at: string | null
   created_at: string
+  lead?: Lead // Optional joined lead data
 }
 
 export interface Deployment {
