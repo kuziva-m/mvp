@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/modules/payments/stripe-client'
 import { createSubscription, updateSubscription, cancelSubscription } from '@/lib/modules/payments/subscription-manager'
+import { deliverService } from '@/lib/modules/deliveries/orchestrator'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -81,7 +82,20 @@ export async function POST(request: NextRequest) {
         })
 
         console.log('Subscription created in database:', stripeSubscription.id)
-        // TODO: Trigger delivery automation here (Batch 5)
+
+        // Trigger delivery automation asynchronously
+        console.log('Triggering delivery automation for lead:', leadId)
+        deliverService(leadId)
+          .then((result) => {
+            if (result.success) {
+              console.log('Delivery completed successfully:', result.domain)
+            } else {
+              console.error('Delivery failed:', result.errors)
+            }
+          })
+          .catch((error) => {
+            console.error('Delivery automation error:', error)
+          })
 
         break
       }

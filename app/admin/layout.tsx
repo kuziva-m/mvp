@@ -18,17 +18,23 @@ export default function AdminLayout({
               </Link>
 
               <div className="ml-10 flex items-center space-x-4">
+                <Link href="/admin/dashboard">
+                  <Button variant="ghost">Dashboard</Button>
+                </Link>
+                <Link href="/admin/analytics">
+                  <Button variant="ghost">Analytics</Button>
+                </Link>
                 <Link href="/admin/leads">
                   <Button variant="ghost">Leads</Button>
+                </Link>
+                <Link href="/admin/support">
+                  <Button variant="ghost">Support</Button>
                 </Link>
                 <Link href="/admin/websites">
                   <Button variant="ghost">Websites</Button>
                 </Link>
                 <Link href="/admin/emails">
                   <Button variant="ghost">Emails</Button>
-                </Link>
-                <Link href="/admin/dashboard">
-                  <Button variant="ghost">Dashboard</Button>
                 </Link>
               </div>
             </div>
