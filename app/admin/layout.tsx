@@ -24,6 +24,9 @@ export default function AdminLayout({
                 <Link href="/admin/analytics">
                   <Button variant="ghost">Analytics</Button>
                 </Link>
+                <Link href="/admin/lead-gen">
+                  <Button variant="ghost">Lead Gen</Button>
+                </Link>
                 <Link href="/admin/leads">
                   <Button variant="ghost">Leads</Button>
                 </Link>
