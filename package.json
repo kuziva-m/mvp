@@ -19,6 +19,7 @@
     "workers:delete": "pm2 delete ecosystem.config.js",
     "test:leads": "tsx scripts/generate-test-leads.ts",
     "test:clay": "tsx scripts/simulate-clay-webhook.ts",
+    "customer-success": "tsx workers/customer-success-worker.ts",
     "all": "concurrently \"npm run dev\" \"npm run workers\""
   },
   "dependencies": {

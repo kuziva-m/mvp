@@ -17,6 +17,7 @@ import * as cloudflare from './cloudflare-client'
 import * as verpex from './verpex-client'
 import * as vercel from './vercel-client'
 import { logDomainPurchase, logHostingCost, logEmailHosting } from '@/lib/modules/financial/expense-tracker'
+import { initializeOnboarding } from '@/lib/modules/customer-success/onboarding-automation'
 
 export interface DeliveryResult {
   success: boolean
@@ -226,6 +227,14 @@ export async function deliverService(leadId: string): Promise<DeliveryResult> {
       console.log('✓ Infrastructure expenses logged')
     } catch (expenseError) {
       console.error('Failed to log infrastructure expenses (non-fatal):', expenseError)
+    }
+
+    // Initialize customer success onboarding
+    try {
+      await initializeOnboarding(leadId)
+      console.log('✓ Customer onboarding initialized')
+    } catch (onboardingError) {
+      console.error('Failed to initialize onboarding (non-fatal):', onboardingError)
     }
 
     console.log('='.repeat(60))

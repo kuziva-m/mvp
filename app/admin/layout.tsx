@@ -48,6 +48,9 @@ export default function AdminLayout({
                 <Link href="/admin/financials">
                   <Button variant="ghost">Financials</Button>
                 </Link>
+                <Link href="/admin/customer-success">
+                  <Button variant="ghost">Success</Button>
+                </Link>
               </div>
             </div>
 
