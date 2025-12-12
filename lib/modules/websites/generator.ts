@@ -2,6 +2,7 @@ import { getById, insert, update } from '@/lib/db'
 import type { Lead, Site, Generation } from '@/types'
 import { scrapeWebsite } from './scraper'
 import { generateWebsiteCopy } from './ai-generator'
+import { logAIUsage } from '@/lib/modules/financial/expense-tracker'
 
 interface GenerationResult {
   success: boolean
@@ -129,11 +130,20 @@ export async function generateWebsite(leadId: string): Promise<GenerationResult>
       // Not a fatal error - site was created successfully
     }
 
-    // 8. Update lead status to 'generated'
+    // 8. Log AI usage expense
+    if (generatedCopy.tokensUsed && generatedCopy.costUSD) {
+      try {
+        await logAIUsage(leadId, siteId, generatedCopy.tokensUsed, generatedCopy.costUSD)
+      } catch (expenseError) {
+        console.error('Failed to log AI expense (non-fatal):', expenseError)
+      }
+    }
+
+    // 9. Update lead status to 'generated'
     await update('leads', leadId, { status: 'generated' })
     console.log('Lead status updated to generated')
 
-    // 9. Queue QA review
+    // 10. Queue QA review
     try {
       const { Queue } = await import('bullmq')
       const { default: Redis } = await import('ioredis')
@@ -154,7 +164,7 @@ export async function generateWebsite(leadId: string): Promise<GenerationResult>
       // Non-fatal - site was still created successfully
     }
 
-    // 10. Return success result
+    // 11. Return success result
     return {
       success: true,
       siteId,

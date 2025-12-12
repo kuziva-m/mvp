@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { insert, update } from '@/lib/db'
 import type { EmailLog } from '@/types'
+import { logEmailCost } from '@/lib/modules/financial/expense-tracker'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
@@ -76,6 +77,13 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     } catch (updateError) {
       console.error('Failed to update lead:', updateError)
       // Don't fail if update fails
+    }
+
+    // 7. Log email cost
+    try {
+      await logEmailCost(leadId, 1)
+    } catch (expenseError) {
+      console.error('Failed to log email expense (non-fatal):', expenseError)
     }
 
     return {

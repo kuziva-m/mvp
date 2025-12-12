@@ -16,6 +16,7 @@ import * as namecheap from './namecheap-client'
 import * as cloudflare from './cloudflare-client'
 import * as verpex from './verpex-client'
 import * as vercel from './vercel-client'
+import { logDomainPurchase, logHostingCost, logEmailHosting } from '@/lib/modules/financial/expense-tracker'
 
 export interface DeliveryResult {
   success: boolean
@@ -216,6 +217,16 @@ export async function deliverService(leadId: string): Promise<DeliveryResult> {
       await sendWelcomeEmail(lead, domain, emailAccount, cpanelUrl)
       return { sent: true }
     })
+
+    // Log infrastructure expenses
+    try {
+      await logDomainPurchase(leadId, domain, 15.00)
+      await logHostingCost(leadId, 20.00)
+      await logEmailHosting(leadId, 0.40)
+      console.log('✓ Infrastructure expenses logged')
+    } catch (expenseError) {
+      console.error('Failed to log infrastructure expenses (non-fatal):', expenseError)
+    }
 
     console.log('='.repeat(60))
     console.log('DELIVERY COMPLETED SUCCESSFULLY')

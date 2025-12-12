@@ -3,6 +3,8 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/modules/payments/stripe-client'
 import { createSubscription, updateSubscription, cancelSubscription } from '@/lib/modules/payments/subscription-manager'
 import { deliverService } from '@/lib/modules/deliveries/orchestrator'
+import { logStripeFee } from '@/lib/modules/financial/expense-tracker'
+import { supabase } from '@/lib/supabase'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -82,6 +84,24 @@ export async function POST(request: NextRequest) {
         })
 
         console.log('Subscription created in database:', stripeSubscription.id)
+
+        // Log revenue event and Stripe fee
+        try {
+          // Log revenue event
+          await supabase.from('revenue_events').insert({
+            subscription_id: stripeSubscription.id,
+            lead_id: leadId,
+            event_type: 'payment_received',
+            amount: 99.0,
+            currency: 'AUD',
+            stripe_event_id: event.id,
+          })
+
+          // Log Stripe processing fee
+          await logStripeFee(leadId, 99.0)
+        } catch (logError) {
+          console.error('Failed to log revenue/expense (non-fatal):', logError)
+        }
 
         // Trigger delivery automation asynchronously
         console.log('Triggering delivery automation for lead:', leadId)
