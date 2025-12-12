@@ -8,6 +8,7 @@ import { generateWebsite } from '../lib/modules/websites/generator'
 import { sendEmail } from '../lib/modules/emails/sender'
 import { deliverService } from '../lib/modules/deliveries/orchestrator'
 import { processRawLead } from '../lib/modules/leads/lead-processor'
+import { runCompleteQA, regenerateFailedSite } from '../lib/modules/qa/qa-orchestrator'
 
 // Singleton Redis connection
 let connection: Redis | null = null
@@ -68,6 +69,7 @@ const workerHealth: Record<string, WorkerHealth> = {
   siteGeneration: { healthy: true, lastJob: new Date(), errors: 0, jobsProcessed: 0 },
   emailSending: { healthy: true, lastJob: new Date(), errors: 0, jobsProcessed: 0 },
   delivery: { healthy: true, lastJob: new Date(), errors: 0, jobsProcessed: 0 },
+  qaReview: { healthy: true, lastJob: new Date(), errors: 0, jobsProcessed: 0 },
 }
 
 // Dead Letter Queue handler
@@ -230,12 +232,49 @@ export const deliveryWorker = new Worker(
   }
 )
 
+// QA Review Worker
+export const qaReviewWorker = new Worker(
+  'qa-review',
+  async (job: Job) => {
+    workerHealth.qaReview.lastJob = new Date()
+
+    try {
+      const { siteId } = job.data
+      console.log(`🔍 Running QA for site: ${siteId}`)
+
+      const result = await runCompleteQA(siteId)
+
+      // If failed, automatically regenerate
+      if (!result.passed && !result.needsManualReview) {
+        await regenerateFailedSite(siteId)
+      }
+
+      workerHealth.qaReview.errors = 0
+      workerHealth.qaReview.jobsProcessed++
+      return result
+    } catch (error) {
+      workerHealth.qaReview.errors++
+      console.error(`❌ QA review failed:`, error)
+      throw error
+    }
+  },
+  {
+    connection: redisConnection,
+    concurrency: 2,
+    limiter: {
+      max: 10,
+      duration: 60000,
+    },
+  }
+)
+
 // Event listeners for all workers
 const workers = [
   { worker: leadProcessingWorker, name: 'lead-processing' },
   { worker: siteGenerationWorker, name: 'site-generation' },
   { worker: emailSendingWorker, name: 'email-sending' },
   { worker: deliveryWorker, name: 'delivery' },
+  { worker: qaReviewWorker, name: 'qa-review' },
 ]
 
 workers.forEach(({ worker, name }) => {
@@ -327,7 +366,7 @@ const instanceName = process.env.WORKER_INSTANCE || 'primary'
 console.log('🚀 Worker Manager Started')
 console.log(`   Instance: ${instanceName}`)
 console.log(`   Mode: ${process.env.CLAY_WEBHOOK_SECRET ? 'PRODUCTION' : 'MOCK'}`)
-console.log('   Workers: lead-processing, site-generation, email-sending, delivery')
+console.log('   Workers: lead-processing, site-generation, email-sending, delivery, qa-review')
 console.log('   Monitoring: Health checks every 30s')
-console.log('   Concurrency: Lead(5), Site(3), Email(10), Delivery(2)')
-console.log('   Rate limits: Lead(50/min), Site(20/min), Email(100/min), Delivery(10/min)')
+console.log('   Concurrency: Lead(5), Site(3), Email(10), Delivery(2), QA(2)')
+console.log('   Rate limits: Lead(50/min), Site(20/min), Email(100/min), Delivery(10/min), QA(10/min)')

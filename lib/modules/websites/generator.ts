@@ -133,7 +133,28 @@ export async function generateWebsite(leadId: string): Promise<GenerationResult>
     await update('leads', leadId, { status: 'generated' })
     console.log('Lead status updated to generated')
 
-    // 9. Return success result
+    // 9. Queue QA review
+    try {
+      const { Queue } = await import('bullmq')
+      const { default: Redis } = await import('ioredis')
+
+      const connection = new Redis(process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING || 'redis://localhost:6379', {
+        maxRetriesPerRequest: null,
+      })
+
+      const qaQueue = new Queue('qa-review', { connection })
+
+      await qaQueue.add('review', {
+        siteId: siteId,
+      })
+
+      console.log(`✅ QA queued for site: ${siteId}`)
+    } catch (qaError) {
+      console.error('Failed to queue QA (non-fatal):', qaError)
+      // Non-fatal - site was still created successfully
+    }
+
+    // 10. Return success result
     return {
       success: true,
       siteId,
