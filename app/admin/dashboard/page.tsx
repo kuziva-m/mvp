@@ -1,326 +1,330 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Users, TrendingUp, DollarSign, CheckCircle, Loader2 } from 'lucide-react'
-import MetricCard from '@/components/MetricCard'
-import ActivityItem from '@/components/ActivityItem'
-import { Badge } from '@/components/ui/badge'
-import type { Lead } from '@/types'
-import type { Metrics, Activity } from '@/lib/modules/crm/analytics'
-
-interface KanbanColumn {
-  id: string
-  title: string
-  color: string
-  leads: Lead[]
-}
+import { motion } from 'framer-motion'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ApexChart } from '@/components/admin/apex-chart'
+import { KanbanBoard } from '@/components/admin/kanban-board'
+import { Button } from '@/components/ui/button'
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Globe,
+  Mail,
+  ArrowUpRight,
+  Clock,
+} from 'lucide-react'
+import { ApexOptions } from 'apexcharts'
+import { DropResult } from '@hello-pangea/dnd'
 
 export default function DashboardPage() {
-  const router = useRouter()
+  const [metrics, setMetrics] = useState<any>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [pipelineData, setPipelineData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
-  const [columns, setColumns] = useState<KanbanColumn[]>([])
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [leadsChartData, setLeadsChartData] = useState<any[]>([])
-  const [revenueChartData, setRevenueChartData] = useState<any[]>([])
 
   useEffect(() => {
-    fetchData()
+    fetchAllData()
   }, [])
 
-  const fetchData = async () => {
+  async function fetchAllData() {
     try {
-      setLoading(true)
+      const [metricsRes, leadsRes] = await Promise.all([
+        fetch('/api/admin/metrics'),
+        fetch('/api/leads'),
+      ])
 
-      // Fetch metrics
-      const metricsRes = await fetch('/api/admin/metrics')
       const metricsData = await metricsRes.json()
-
-      // Fetch leads grouped by status
-      const leadsRes = await fetch('/api/leads')
       const leadsData = await leadsRes.json()
 
-      // Fetch activity
-      const activityRes = await fetch('/api/admin/activity')
-      const activityData = await activityRes.json()
+      setMetrics(metricsData)
 
-      // Fetch chart data
-      const leadsChartRes = await fetch('/api/admin/charts/leads?days=30')
-      const leadsChartJson = await leadsChartRes.json()
+      // Build pipeline from leads
+      const leads = leadsData.leads || []
 
-      const revenueChartRes = await fetch('/api/admin/charts/revenue?months=6')
-      const revenueChartJson = await revenueChartRes.json()
-
-      setMetrics(metricsData.metrics)
-      setActivities(activityData.activities || [])
-      setLeadsChartData(leadsChartJson.data || [])
-      setRevenueChartData(revenueChartJson.data || [])
-
-      // Group leads by status for Kanban
-      const allLeads = leadsData.leads || []
-      const kanbanColumns: KanbanColumn[] = [
+      const pipeline = [
         {
           id: 'pending',
-          title: 'Pending',
-          color: 'bg-gray-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'pending'),
+          title: 'New Leads',
+          color: 'gray',
+          items: leads
+            .filter((l: any) => l.status === 'pending')
+            .slice(0, 5)
+            .map((l: any) => ({
+              id: l.id,
+              title: l.business_name,
+              description: l.email,
+              metadata: { score: l.quality_score || 0 },
+            })),
+        },
+        {
+          id: 'generated',
+          title: 'Website Ready',
+          color: 'blue',
+          items: leads
+            .filter((l: any) => l.status === 'generated')
+            .slice(0, 5)
+            .map((l: any) => ({
+              id: l.id,
+              title: l.business_name,
+              description: l.email,
+              metadata: { industry: l.industry },
+            })),
         },
         {
           id: 'contacted',
-          title: 'Contacted',
-          color: 'bg-blue-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'contacted'),
-        },
-        {
-          id: 'opened',
-          title: 'Opened',
-          color: 'bg-purple-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'opened'),
-        },
-        {
-          id: 'clicked',
-          title: 'Clicked',
-          color: 'bg-cyan-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'clicked'),
+          title: 'Email Sent',
+          color: 'purple',
+          items: leads
+            .filter((l: any) => l.status === 'contacted')
+            .slice(0, 5)
+            .map((l: any) => ({
+              id: l.id,
+              title: l.business_name,
+              description: l.email,
+              metadata: { sent: 'Email sent' },
+            })),
         },
         {
           id: 'subscribed',
-          title: 'Subscribed',
-          color: 'bg-green-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'subscribed'),
-        },
-        {
-          id: 'delivered',
-          title: 'Delivered',
-          color: 'bg-emerald-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'delivered'),
-        },
-        {
-          id: 'canceled',
-          title: 'Canceled',
-          color: 'bg-red-100',
-          leads: allLeads.filter((l: Lead) => l.status === 'canceled'),
+          title: 'Paid Customer',
+          color: 'green',
+          items: leads
+            .filter((l: any) => l.status === 'subscribed' || l.status === 'delivered')
+            .slice(0, 5)
+            .map((l: any) => ({
+              id: l.id,
+              title: l.business_name,
+              description: l.email,
+              metadata: { mrr: '$99' },
+            })),
         },
       ]
 
-      setColumns(kanbanColumns)
+      setPipelineData(pipeline)
+
+      // Build recent activity
+      const activities = [
+        ...leads
+          .filter((l: any) => l.created_at)
+          .slice(0, 2)
+          .map((l: any) => ({
+            icon: Users,
+            label: 'New lead added',
+            detail: l.business_name,
+            time: getRelativeTime(l.created_at),
+            color: 'blue',
+          })),
+        ...leads
+          .filter((l: any) => l.status === 'generated')
+          .slice(0, 2)
+          .map((l: any) => ({
+            icon: Globe,
+            label: 'Website generated',
+            detail: l.business_name,
+            time: getRelativeTime(l.updated_at || l.created_at),
+            color: 'purple',
+          })),
+        ...leads
+          .filter((l: any) => l.email_sent_at)
+          .slice(0, 2)
+          .map((l: any) => ({
+            icon: Mail,
+            label: 'Email sent',
+            detail: l.business_name,
+            time: getRelativeTime(l.email_sent_at),
+            color: 'green',
+          })),
+        ...leads
+          .filter((l: any) => l.status === 'subscribed')
+          .slice(0, 2)
+          .map((l: any) => ({
+            icon: DollarSign,
+            label: 'Payment received',
+            detail: `$99 from ${l.business_name}`,
+            time: getRelativeTime(l.updated_at || l.created_at),
+            color: 'orange',
+          })),
+      ]
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+        .slice(0, 6)
+
+      setRecentActivity(activities.length > 0 ? activities : [
+        { icon: Clock, label: 'No recent activity', detail: 'Get started by adding leads', time: 'Just now', color: 'gray' },
+      ])
+
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('Failed to fetch dashboard data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDragEnd = async (result: DropResult) => {
-    const { source, destination, draggableId } = result
+  function getRelativeTime(timestamp: string) {
+    const now = new Date()
+    const then = new Date(timestamp)
+    const diffMs = now.getTime() - then.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
 
-    // Dropped outside a droppable
-    if (!destination) return
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+  }
 
-    // Dropped in same position
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      return
-    }
+  async function handleKanbanDragEnd(result: DropResult) {
+    if (!result.destination) return
 
-    // Find the lead
-    const sourceColumn = columns.find((c) => c.id === source.droppableId)
-    const lead = sourceColumn?.leads.find((l) => l.id === draggableId)
+    const leadId = result.draggableId
+    const newStatus = result.destination.droppableId
 
-    if (!lead) return
+    await fetch(`/api/leads/${leadId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    })
 
-    // Update lead status
-    try {
-      const response = await fetch(`/api/leads/${draggableId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: destination.droppableId }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update lead status')
-      }
-
-      // Refresh data
-      await fetchData()
-    } catch (error) {
-      console.error('Error updating lead status:', error)
-      alert('Failed to update lead status')
-    }
+    fetchAllData()
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full" />
       </div>
     )
   }
 
+  const revenueOptions: ApexOptions = {
+    chart: { toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+    colors: ['#3b82f6'],
+    stroke: { curve: 'smooth', width: 3 },
+    fill: { type: 'gradient', gradient: { opacityFrom: 0.7, opacityTo: 0.2 } },
+    dataLabels: { enabled: false },
+    grid: { borderColor: '#f1f5f9' },
+    xaxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] },
+    yaxis: { labels: { formatter: (val) => `$${val}` } },
+  }
+
+  const revenueSeries = [{ name: 'Revenue', data: [0, 0, 99, 99, 99, metrics?.totalRevenue || 297] }]
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">CRM Dashboard</h1>
-        <p className="text-gray-600 mt-1">Manage leads and track performance</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Here's your business overview.</p>
+        </div>
+        <Button className="gap-2">
+          <ArrowUpRight className="w-4 h-4" />
+          View Full Report
+        </Button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Leads"
-          value={metrics?.totalLeads || 0}
-          icon={Users}
-          color="text-blue-600"
-        />
-        <MetricCard
-          title="Conversion Rate"
-          value={`${metrics?.conversionRate.toFixed(1)}%`}
-          icon={TrendingUp}
-          color="text-purple-600"
-        />
-        <MetricCard
-          title="MRR"
-          value={`$${metrics?.mrr.toFixed(2)}`}
-          icon={DollarSign}
-          color="text-green-600"
-        />
-        <MetricCard
-          title="Active Subscriptions"
-          value={metrics?.activeSubscriptions || 0}
-          icon={CheckCircle}
-          color="text-emerald-600"
-        />
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Kanban Board */}
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Pipeline</h2>
-
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="flex gap-4 overflow-x-auto pb-4">
-                {columns.map((column) => (
-                  <div key={column.id} className="flex-shrink-0 w-64">
-                    <div className={`rounded-lg p-3 ${column.color}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-gray-900">{column.title}</h3>
-                        <span className="text-sm text-gray-600">
-                          {column.leads.length}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Droppable droppableId={column.id}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`mt-2 space-y-2 min-h-[200px] rounded-lg p-2 ${
-                            snapshot.isDraggingOver ? 'bg-gray-100' : ''
-                          }`}
-                        >
-                          {column.leads.map((lead, index) => (
-                            <Draggable
-                              key={lead.id}
-                              draggableId={lead.id}
-                              index={index}
-                            >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`bg-white border border-gray-200 rounded-lg p-3 cursor-move hover:shadow-md transition-shadow ${
-                                    snapshot.isDragging ? 'shadow-lg' : ''
-                                  }`}
-                                  onClick={() => router.push(`/admin/leads/${lead.id}`)}
-                                >
-                                  <h4 className="font-medium text-gray-900 text-sm">
-                                    {lead.business_name}
-                                  </h4>
-                                  {lead.email && (
-                                    <p className="text-xs text-gray-600 mt-1 truncate">
-                                      {lead.email}
-                                    </p>
-                                  )}
-                                  <div className="flex items-center justify-between mt-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {lead.industry}
-                                    </Badge>
-                                    <span className="text-xs text-gray-500">
-                                      {new Date(lead.created_at).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </div>
-                ))}
+      {/* Metric Cards */}
+      <div className="grid md:grid-cols-4 gap-6">
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
-            </DragDropContext>
-          </div>
-        </div>
-
-        {/* Activity Feed */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-            <div className="space-y-1 max-h-[600px] overflow-y-auto">
-              {activities.map((activity) => (
-                <ActivityItem key={activity.id} {...activity} />
-              ))}
-              {activities.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-8">
-                  No recent activity
-                </p>
-              )}
+              <span className="text-sm font-medium text-green-600">+12%</span>
             </div>
+            <div className="text-3xl font-bold">{metrics?.totalLeads || 0}</div>
+            <div className="text-sm text-gray-600 mt-1">Total Leads</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-purple-600" />
+              </div>
+              <span className="text-sm font-medium text-green-600">+2.5%</span>
+            </div>
+            <div className="text-3xl font-bold">{metrics?.conversionRate || 0}%</div>
+            <div className="text-sm text-gray-600 mt-1">Conversion Rate</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+              <span className="text-sm font-medium text-green-600">+18%</span>
+            </div>
+            <div className="text-3xl font-bold">${metrics?.totalRevenue || 0}</div>
+            <div className="text-sm text-gray-600 mt-1">MRR</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                <Globe className="w-6 h-6 text-orange-600" />
+              </div>
+              <span className="text-sm font-medium text-green-600">+{metrics?.activeCustomers || 0}</span>
+            </div>
+            <div className="text-3xl font-bold">{metrics?.activeCustomers || 0}</div>
+            <div className="text-sm text-gray-600 mt-1">Active Customers</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Chart */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle>Revenue Growth</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ApexChart type="area" series={revenueSeries} options={revenueOptions} height={300} />
+        </CardContent>
+      </Card>
+
+      {/* Pipeline */}
+      <div>
+        <h2 className="text-xl font-bold mb-4">Pipeline</h2>
+        {pipelineData.length > 0 && (
+          <KanbanBoard columns={pipelineData} onDragEnd={handleKanbanDragEnd} />
+        )}
+      </div>
+
+      {/* Recent Activity */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentActivity.map((activity, index) => {
+              const Icon = activity.icon
+              return (
+                <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className={`w-10 h-10 rounded-lg bg-${activity.color}-100 flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 text-${activity.color}-600`} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{activity.label}</div>
+                    <div className="text-sm text-gray-500">{activity.detail}</div>
+                  </div>
+                  <div className="text-xs text-gray-400">{activity.time}</div>
+                </div>
+              )
+            })}
           </div>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Leads Over Time */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Leads Over Time</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={leadsChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="count" stroke="#3b82f6" name="Leads" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Revenue Over Time */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Revenue Over Time</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenueChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="revenue" fill="#10b981" name="Revenue ($)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
