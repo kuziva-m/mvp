@@ -51,6 +51,9 @@ export default function AdminLayout({
                 <Link href="/admin/customer-success">
                   <Button variant="ghost">Success</Button>
                 </Link>
+                <Link href="/admin/lead-magnet">
+                  <Button variant="ghost">Lead Magnet</Button>
+                </Link>
               </div>
             </div>
 
