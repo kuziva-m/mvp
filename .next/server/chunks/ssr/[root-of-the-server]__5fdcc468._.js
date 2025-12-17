@@ -71,7 +71,7 @@ async function signup(formData) {
     const email = formData.get("email");
     const password = formData.get("password");
     const businessName = formData.get("businessName");
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -83,6 +83,13 @@ async function signup(formData) {
     if (error) {
         return {
             error: error.message
+        };
+    }
+    // If user is created but no session exists, it means "Confirm Email" is on.
+    if (data?.user && !data?.session) {
+        return {
+            success: true,
+            message: "Account created! Please check your email to confirm your account before logging in."
         };
     }
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])("/", "layout");

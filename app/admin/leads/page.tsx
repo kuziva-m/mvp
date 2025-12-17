@@ -1,13 +1,32 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { format } from 'date-fns'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -15,438 +34,356 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination'
-import {
+  Plus,
   Search,
-  PlusCircle,
-  Upload,
-  ChevronUp,
-  ChevronDown,
   Loader2,
-} from 'lucide-react'
-import type { Lead } from '@/types'
-
-type SortColumn = 'business_name' | 'email' | 'created_at'
-type SortDirection = 'asc' | 'desc'
-
-const LEADS_PER_PAGE = 20
-
-const STATUS_COLORS = {
-  pending: 'bg-gray-100 text-gray-800',
-  scraped: 'bg-blue-100 text-blue-800',
-  generated: 'bg-purple-100 text-purple-800',
-  emailed: 'bg-yellow-100 text-yellow-800',
-  opened: 'bg-orange-100 text-orange-800',
-  clicked: 'bg-cyan-100 text-cyan-800',
-  subscribed: 'bg-green-100 text-green-800',
-  delivered: 'bg-emerald-100 text-emerald-800',
-  canceled: 'bg-red-100 text-red-800',
-}
+  Globe,
+  Mail,
+  Phone,
+  ExternalLink,
+} from "lucide-react";
+import { createLead, scrapeWebsite, updateLeadStatus } from "./actions";
+import { toast } from "sonner";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function LeadsPage() {
-  const router = useRouter()
-  const [leads, setLeads] = useState<Lead[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [leads, setLeads] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapedData, setScrapedData] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-
-  // Sorting
-  const [sortColumn, setSortColumn] = useState<SortColumn>('created_at')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1)
-
-  // Fetch leads
+  // Fetch leads on load
   useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        setIsLoading(true)
-        const response = await fetch('/api/leads')
-        const result = await response.json()
+    fetchLeads();
+  }, []);
 
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch leads')
-        }
+  async function fetchLeads() {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data } = await supabase
+      .from("leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setLeads(data);
+    setIsLoading(false);
+  }
 
-        setLeads(result.data || [])
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching leads:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load leads')
-      } finally {
-        setIsLoading(false)
-      }
+  // Handle the "Scrape" button
+  async function handleScrape(url: string) {
+    if (!url) return toast.error("Please enter a website URL");
+    setIsScraping(true);
+    const result = await scrapeWebsite(url);
+    if (result.success) {
+      setScrapedData(result.data);
+      toast.success("Website analyzed successfully!");
     }
+    setIsScraping(false);
+  }
 
-    fetchLeads()
-  }, [])
-
-  // Filter leads
-  const filteredLeads = leads.filter((lead) => {
-    const matchesSearch =
-      searchTerm === '' ||
-      lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus =
-      statusFilter === 'all' || lead.status === statusFilter
-
-    return matchesSearch && matchesStatus
-  })
-
-  // Sort leads
-  const sortedLeads = [...filteredLeads].sort((a, b) => {
-    let aValue: string | number = ''
-    let bValue: string | number = ''
-
-    switch (sortColumn) {
-      case 'business_name':
-        aValue = a.business_name.toLowerCase()
-        bValue = b.business_name.toLowerCase()
-        break
-      case 'email':
-        aValue = (a.email || '').toLowerCase()
-        bValue = (b.email || '').toLowerCase()
-        break
-      case 'created_at':
-        aValue = new Date(a.created_at).getTime()
-        bValue = new Date(b.created_at).getTime()
-        break
-    }
-
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
-    return 0
-  })
-
-  // Paginate leads
-  const totalPages = Math.ceil(sortedLeads.length / LEADS_PER_PAGE)
-  const startIndex = (currentPage - 1) * LEADS_PER_PAGE
-  const endIndex = startIndex + LEADS_PER_PAGE
-  const paginatedLeads = sortedLeads.slice(startIndex, endIndex)
-
-  // Handle sort
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+  // Handle saving the lead
+  async function handleSave(formData: FormData) {
+    const res = await createLead(formData);
+    if (res?.error) {
+      toast.error(res.error);
     } else {
-      setSortColumn(column)
-      setSortDirection('asc')
+      toast.success("Lead added successfully");
+      setIsDialogOpen(false);
+      setScrapedData(null); // Reset form
+      fetchLeads();
     }
   }
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm, statusFilter])
-
-  // Clear filters
-  const clearFilters = () => {
-    setSearchTerm('')
-    setStatusFilter('all')
-  }
-
-  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all'
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">Error: {error}</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
-      </div>
-    )
-  }
+  // Filter leads for tabs
+  const newLeads = leads.filter((l) => l.status === "new");
+  const warmLeads = leads.filter((l) =>
+    ["contacted", "warm"].includes(l.status)
+  );
+  const hotLeads = leads.filter((l) => l.status === "hot");
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Leads</h1>
-          <p className="text-gray-600 mt-2">Manage your business leads</p>
+          <h1 className="text-3xl font-bold tracking-tight">Lead Management</h1>
+          <p className="text-muted-foreground">
+            Track, analyze, and convert your prospects.
+          </p>
         </div>
-        <div className="flex gap-3">
-          <Link href="/admin/leads/import">
-            <Button variant="outline">
-              <Upload className="mr-2 h-4 w-4" />
-              Import CSV
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 shadow-lg shadow-blue-500/20">
+              <Plus className="h-4 w-4" /> Add New Lead
             </Button>
-          </Link>
-          <Link href="/admin/leads/new">
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Lead
-            </Button>
-          </Link>
-        </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Lead</DialogTitle>
+              <CardDescription>
+                Enter a website to auto-fill details.
+              </CardDescription>
+            </DialogHeader>
+
+            <form action={handleSave} className="space-y-4 mt-4">
+              <div className="flex gap-2">
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="url">Website URL</Label>
+                  <Input
+                    id="url"
+                    name="website"
+                    placeholder="example.com"
+                    onBlur={(e) => {
+                      if (e.target.value.length > 3)
+                        handleScrape(e.target.value);
+                    }}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isScraping}
+                    onClick={() => {
+                      const input = document.getElementById(
+                        "url"
+                      ) as HTMLInputElement;
+                      handleScrape(input.value);
+                    }}
+                  >
+                    {isScraping ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Auto-filled Section */}
+              <div
+                className={`space-y-4 p-4 rounded-lg border bg-slate-50 transition-all ${
+                  scrapedData ? "opacity-100" : "opacity-50"
+                }`}
+              >
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {scrapedData?.logo_url && (
+                    <div className="col-span-1">
+                      <img
+                        src={scrapedData.logo_url}
+                        alt="Logo"
+                        className="w-12 h-12 rounded-lg bg-white object-contain border"
+                      />
+                      <input
+                        type="hidden"
+                        name="logoUrl"
+                        value={scrapedData.logo_url}
+                      />
+                    </div>
+                  )}
+                  <div className="col-span-3">
+                    <Label>Business Name</Label>
+                    <Input
+                      name="businessName"
+                      defaultValue={scrapedData?.business_name}
+                      required
+                      placeholder="Business Name"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Industry</Label>
+                    <Input
+                      name="industry"
+                      defaultValue={scrapedData?.industry}
+                      placeholder="Tech, Retail..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Source</Label>
+                    <Select name="source" defaultValue="Manual">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Manual">Manual Entry</SelectItem>
+                        <SelectItem value="Clay">Clay</SelectItem>
+                        <SelectItem value="ScrapeMaps">ScrapeMaps</SelectItem>
+                        <SelectItem value="FB Ads">FB Ads</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      name="email"
+                      defaultValue={scrapedData?.email}
+                      placeholder="contact@..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      name="phone"
+                      defaultValue={scrapedData?.phone}
+                      placeholder="+1..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={isScraping}>
+                  Save Lead
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex gap-4 flex-wrap">
-          {/* Search */}
-          <div className="flex-1 min-w-[300px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search by business name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+      {/* TABS SECTION */}
+      <Tabs defaultValue="new" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsTrigger value="new">New ({newLeads.length})</TabsTrigger>
+          <TabsTrigger value="warm">Warm ({warmLeads.length})</TabsTrigger>
+          <TabsTrigger value="hot">Hot ({hotLeads.length})</TabsTrigger>
+        </TabsList>
 
-          {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="scraped">Scraped</SelectItem>
-              <SelectItem value="generated">Generated</SelectItem>
-              <SelectItem value="emailed">Contacted</SelectItem>
-              <SelectItem value="opened">Opened</SelectItem>
-              <SelectItem value="clicked">Clicked</SelectItem>
-              <SelectItem value="subscribed">Subscribed</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="canceled">Canceled</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <Button variant="outline" onClick={clearFilters}>
-              Clear Filters
-            </Button>
-          )}
-        </div>
-
-        {/* Results Count */}
-        <div className="mt-4 text-sm text-gray-600">
-          {sortedLeads.length} result{sortedLeads.length === 1 ? '' : 's'} found
-        </div>
-      </Card>
-
-      {/* Table */}
-      {sortedLeads.length === 0 ? (
-        <Card className="p-12">
-          <div className="text-center">
-            <p className="text-lg mb-4 text-gray-500">No leads found</p>
-            {hasActiveFilters ? (
-              <Button onClick={clearFilters}>Clear Filters</Button>
-            ) : (
-              <div className="flex gap-3 justify-center">
-                <Link href="/admin/leads/new">
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Lead
-                  </Button>
-                </Link>
-                <Link href="/admin/leads/import">
-                  <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import CSV
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </Card>
-      ) : (
-        <>
-          <Card>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-gray-50"
-                      onClick={() => handleSort('business_name')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Business Name
-                        {sortColumn === 'business_name' &&
-                          (sortDirection === 'asc' ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          ))}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-gray-50"
-                      onClick={() => handleSort('email')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Email
-                        {sortColumn === 'email' &&
-                          (sortDirection === 'asc' ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          ))}
-                      </div>
-                    </TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Industry</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-gray-50"
-                      onClick={() => handleSort('created_at')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Created
-                        {sortColumn === 'created_at' &&
-                          (sortDirection === 'asc' ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          ))}
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedLeads.map((lead) => (
-                    <TableRow
-                      key={lead.id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => router.push(`/admin/leads/${lead.id}`)}
-                    >
-                      <TableCell className="font-medium">
-                        {lead.business_name}
-                      </TableCell>
-                      <TableCell>{lead.email || '-'}</TableCell>
-                      <TableCell>{lead.phone || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {lead.industry}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            STATUS_COLORS[
-                              lead.status as keyof typeof STATUS_COLORS
-                            ] || STATUS_COLORS.pending
-                          }
-                        >
-                          {lead.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(lead.created_at), 'MMM d, yyyy')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1}-
-                {Math.min(endIndex, sortedLeads.length)} of{' '}
-                {sortedLeads.length} total
-              </div>
-
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() =>
-                        setCurrentPage(Math.max(1, currentPage - 1))
-                      }
-                      className={
-                        currentPage === 1
-                          ? 'pointer-events-none opacity-50'
-                          : 'cursor-pointer'
-                      }
-                    />
-                  </PaginationItem>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((page) => {
-                      return (
-                        page === 1 ||
-                        page === totalPages ||
-                        (page >= currentPage - 1 && page <= currentPage + 1)
-                      )
-                    })
-                    .map((page, index, array) => {
-                      if (index > 0 && array[index - 1] !== page - 1) {
-                        return (
-                          <PaginationItem key={`ellipsis-${page}`}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )
-                      }
-                      return (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            onClick={() => setCurrentPage(page)}
-                            isActive={currentPage === page}
-                            className="cursor-pointer"
+        <div className="mt-6">
+          {["new", "warm", "hot"].map((tab) => (
+            <TabsContent key={tab} value={tab}>
+              <Card>
+                <CardHeader className="px-6 py-4 border-b bg-gray-50/50">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg capitalize">
+                      {tab} Leads
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      {/* Add Filters Here later */}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[300px]">Business</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(tab === "new"
+                        ? newLeads
+                        : tab === "warm"
+                        ? warmLeads
+                        : hotLeads
+                      ).map((lead) => (
+                        <TableRow key={lead.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg border bg-white flex items-center justify-center overflow-hidden">
+                                {lead.logo_url ? (
+                                  <img
+                                    src={lead.logo_url}
+                                    className="h-full w-full object-contain"
+                                    alt=""
+                                  />
+                                ) : (
+                                  <Globe className="h-5 w-5 text-gray-400" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium">
+                                  {lead.business_name}
+                                </div>
+                                <a
+                                  href={lead.website}
+                                  target="_blank"
+                                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                                >
+                                  {lead.website}{" "}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Mail className="h-3 w-3" /> {lead.email || "-"}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Phone className="h-3 w-3" />{" "}
+                                {lead.phone || "-"}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-slate-100">
+                              {lead.source}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              defaultValue={lead.status}
+                              onValueChange={(val) => {
+                                updateLeadStatus(lead.id, val);
+                                // Optimistic update
+                                const updated = leads.map((l) =>
+                                  l.id === lead.id ? { ...l, status: val } : l
+                                );
+                                setLeads(updated);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-[110px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="warm">Warm</SelectItem>
+                                <SelectItem value="hot">Hot</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {leads.length === 0 && !isLoading && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center py-8 text-gray-500"
                           >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )
-                    })}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() =>
-                        setCurrentPage(Math.min(totalPages, currentPage + 1))
-                      }
-                      className={
-                        currentPage === totalPages
-                          ? 'pointer-events-none opacity-50'
-                          : 'cursor-pointer'
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-        </>
-      )}
+                            No leads found. Add one to get started!
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </div>
+      </Tabs>
     </div>
-  )
+  );
 }

@@ -14,23 +14,46 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { login, signup } from "./actions";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(formData: FormData, action: "login" | "signup") {
     setIsLoading(true);
+
+    // 1. Client-Side Validation for Sign Up
+    if (action === "signup") {
+      const password = formData.get("password") as string;
+      const confirmPassword = formData.get("confirmPassword") as string;
+
+      if (password !== confirmPassword) {
+        toast.error("Passwords do not match");
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
+      // 2. Server Action
       const result = await (action === "login"
         ? login(formData)
         : signup(formData));
+
+      // 3. Explicit Feedback Handling
       if (result?.error) {
         toast.error(result.error);
+      } else if (result?.success) {
+        toast.success(result.message || "Success! Redirecting...");
       }
-    } catch (e) {
-      toast.error("An unexpected error occurred");
+    } catch (e: any) {
+      // Ignore redirects as they are actually successful
+      if (e.message !== "NEXT_REDIRECT") {
+        console.error("Critical Error:", e);
+        toast.error("System error. Check console for details.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +90,7 @@ export default function LoginPage() {
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
 
+            {/* LOGIN FORM */}
             <TabsContent value="login">
               <form
                 action={(formData) => handleSubmit(formData, "login")}
@@ -84,12 +108,27 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-500" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <Button className="w-full" type="submit" disabled={isLoading}>
                   {isLoading ? (
@@ -100,6 +139,7 @@ export default function LoginPage() {
               </form>
             </TabsContent>
 
+            {/* SIGN UP FORM */}
             <TabsContent value="signup">
               <form
                 action={(formData) => handleSubmit(formData, "signup")}
@@ -124,15 +164,43 @@ export default function LoginPage() {
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-500" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
                   <Input
-                    id="signup-password"
-                    name="password"
+                    id="confirm-password"
+                    name="confirmPassword"
                     type="password"
+                    placeholder="Re-enter password"
                     required
                   />
                 </div>
+
                 <Button className="w-full" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
