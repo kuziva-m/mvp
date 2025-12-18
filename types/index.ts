@@ -1,14 +1,13 @@
-// Complete type definitions matching database schema
+// types/index.ts
 
 export interface Lead {
   id: string;
-  user_id: string; // Linked to the user who owns this lead
+  user_id: string;
   business_name: string;
   email?: string;
   website?: string;
   phone?: string;
   industry: string;
-  // Matches the dropdown options in your UI
   status: "new" | "contacted" | "warm" | "hot" | "closed" | "subscriber";
   source:
     | "Manual"
@@ -21,20 +20,26 @@ export interface Lead {
   quality_score: number;
   last_activity_at?: string;
   created_at: string;
+  // Email Tracking Fields
+  email_sent_at?: string;
+  email_opened_at?: string;
+  email_clicked_at?: string;
+  email_replied_at?: string;
 }
 
 export interface Subscription {
   id: string;
-  user_id: string; // Added to match SQL Schema
+  user_id: string;
   lead_id: string;
   plan_name: string;
   amount: number;
-  billing_cycle: "monthly" | "yearly"; // Added to match SQL Schema
+  billing_cycle: "monthly" | "yearly";
   status: "active" | "past_due" | "canceled";
   started_at: string;
   created_at?: string;
 }
 
+// ... (keep the rest of the file as is)
 export interface Site {
   id: string;
   lead_id: string;
@@ -144,12 +149,10 @@ export interface TicketMessage {
   created_at: string;
 }
 
-// Form input types (for creating records)
 export type LeadInput = Omit<Lead, "id" | "created_at" | "updated_at">;
 export type SiteInput = Omit<Site, "id" | "created_at">;
 export type EmailTemplateInput = Omit<EmailTemplate, "id" | "created_at">;
 
-// Website generation types
 export interface ScrapedData {
   business_name?: string;
   industry?: string;
@@ -195,4 +198,25 @@ export interface SiteContent {
     text: string;
   };
   logoUrl?: string;
+}
+export type WebsiteStatus = "draft" | "generated" | "flagged" | "published";
+
+export interface Website {
+  id: string;
+  lead_id: string;
+  template_id: string;
+  content: {
+    heroHeadline?: string;
+    heroSubheadline?: string;
+    aboutText?: string;
+    services?: string[];
+    contactEmail?: string;
+    [key: string]: any;
+  };
+  status: WebsiteStatus;
+  qa_score: number;
+  qa_report: string[];
+  subdomain?: string;
+  created_at: string;
+  updated_at: string;
 }

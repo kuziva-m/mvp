@@ -43,13 +43,17 @@ import {
   Mail,
   Phone,
   ExternalLink,
+  Eye,
+  MousePointerClick,
+  CheckCircle2,
 } from "lucide-react";
 import { createLead, scrapeWebsite, updateLeadStatus } from "./actions";
 import { toast } from "sonner";
 import { createBrowserClient } from "@supabase/ssr";
+import { Lead } from "@/types";
 
 export default function LeadsPage() {
-  const [leads, setLeads] = useState<any[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScraping, setIsScraping] = useState(false);
   const [scrapedData, setScrapedData] = useState<any>(null);
@@ -69,7 +73,8 @@ export default function LeadsPage() {
       .from("leads")
       .select("*")
       .order("created_at", { ascending: false });
-    if (data) setLeads(data);
+
+    if (data) setLeads(data as Lead[]);
     setIsLoading(false);
   }
 
@@ -94,6 +99,29 @@ export default function LeadsPage() {
       toast.success("Lead added successfully");
       setIsDialogOpen(false);
       setScrapedData(null); // Reset form
+      fetchLeads();
+    }
+  }
+
+  async function handleStatusChange(id: string, newStatus: string) {
+    // Optimistic Update
+    const originalLeads = [...leads];
+    setLeads(
+      leads.map((l) => (l.id === id ? { ...l, status: newStatus as any } : l))
+    );
+
+    const result = await updateLeadStatus(id, newStatus);
+
+    if (result?.error) {
+      toast.error("Failed to update status");
+      setLeads(originalLeads); // Revert
+    } else {
+      if (newStatus === "subscriber") {
+        toast.success("Lead moved to Subscriptions!");
+      } else {
+        toast.success("Status updated");
+      }
+      // Re-fetch to get any server-side changes (like new subscription links)
       fetchLeads();
     }
   }
@@ -277,8 +305,9 @@ export default function LeadsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[300px]">Business</TableHead>
+                        <TableHead className="w-[280px]">Business</TableHead>
                         <TableHead>Contact</TableHead>
+                        <TableHead>Engagement</TableHead>
                         <TableHead>Source</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -312,6 +341,7 @@ export default function LeadsPage() {
                                 <a
                                   href={lead.website}
                                   target="_blank"
+                                  rel="noreferrer"
                                   className="text-xs text-blue-500 hover:underline flex items-center gap-1"
                                 >
                                   {lead.website}{" "}
@@ -331,6 +361,53 @@ export default function LeadsPage() {
                               </div>
                             </div>
                           </TableCell>
+
+                          {/* NEW: Engagement Columns */}
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="flex items-center gap-1"
+                                title={
+                                  lead.email_opened_at
+                                    ? "Email Opened"
+                                    : "Not Opened"
+                                }
+                              >
+                                <Eye
+                                  className={`h-4 w-4 ${
+                                    lead.email_opened_at
+                                      ? "text-green-500"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              </div>
+                              <div
+                                className="flex items-center gap-1"
+                                title={
+                                  lead.email_clicked_at
+                                    ? "Link Clicked"
+                                    : "Not Clicked"
+                                }
+                              >
+                                <MousePointerClick
+                                  className={`h-4 w-4 ${
+                                    lead.email_clicked_at
+                                      ? "text-blue-500"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              </div>
+                              {lead.email_replied_at && (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-orange-100 text-orange-700 hover:bg-orange-100"
+                                >
+                                  Replied
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+
                           <TableCell>
                             <Badge variant="outline" className="bg-slate-100">
                               {lead.source}
@@ -339,22 +416,26 @@ export default function LeadsPage() {
                           <TableCell>
                             <Select
                               defaultValue={lead.status}
-                              onValueChange={(val) => {
-                                updateLeadStatus(lead.id, val);
-                                // Optimistic update
-                                const updated = leads.map((l) =>
-                                  l.id === lead.id ? { ...l, status: val } : l
-                                );
-                                setLeads(updated);
-                              }}
+                              onValueChange={(val) =>
+                                handleStatusChange(lead.id, val)
+                              }
                             >
-                              <SelectTrigger className="h-8 w-[110px]">
+                              <SelectTrigger className="h-8 w-[130px]">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="new">New</SelectItem>
                                 <SelectItem value="warm">Warm</SelectItem>
                                 <SelectItem value="hot">Hot</SelectItem>
+                                <SelectItem
+                                  value="subscriber"
+                                  className="text-green-600 font-medium focus:text-green-700"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-3 w-3" />{" "}
+                                    Subscriber
+                                  </div>
+                                </SelectItem>
                                 <SelectItem value="closed">Closed</SelectItem>
                               </SelectContent>
                             </Select>
@@ -366,16 +447,22 @@ export default function LeadsPage() {
                           </TableCell>
                         </TableRow>
                       ))}
-                      {leads.length === 0 && !isLoading && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center py-8 text-gray-500"
-                          >
-                            No leads found. Add one to get started!
-                          </TableCell>
-                        </TableRow>
-                      )}
+                      {(tab === "new"
+                        ? newLeads
+                        : tab === "warm"
+                        ? warmLeads
+                        : hotLeads
+                      ).length === 0 &&
+                        !isLoading && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-center py-8 text-gray-500"
+                            >
+                              No leads found in {tab}.
+                            </TableCell>
+                          </TableRow>
+                        )}
                     </TableBody>
                   </Table>
                 </CardContent>

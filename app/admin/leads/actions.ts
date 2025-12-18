@@ -42,8 +42,8 @@ export async function createLead(formData: FormData) {
     phone: formData.get("phone"),
     industry: formData.get("industry") || "Unknown",
     source: formData.get("source") || "Manual",
-    status: "new", // Default status
-    quality_score: 50, // Default score
+    status: "new",
+    quality_score: 50,
     logo_url: formData.get("logoUrl"),
   };
 
@@ -57,6 +57,40 @@ export async function createLead(formData: FormData) {
 
 export async function updateLeadStatus(id: string, status: string) {
   const supabase = await createClient();
-  await supabase.from("leads").update({ status }).eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // 1. Update the Lead Status
+  const { error } = await supabase
+    .from("leads")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  // 2. AUTOMATIC SUBSCRIPTION LOGIC
+  // If moving to 'subscriber', check if subscription exists, if not create one.
+  if (status === "subscriber") {
+    const { data: existingSub } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("lead_id", id)
+      .single();
+
+    if (!existingSub) {
+      await supabase.from("subscriptions").insert({
+        user_id: user.id,
+        lead_id: id,
+        status: "active",
+        plan_name: "Standard Plan", // Default
+        amount: 99.0, // Default
+        billing_cycle: "monthly", // Default
+      });
+    }
+  }
+
   revalidatePath("/admin/leads");
+  return { success: true };
 }

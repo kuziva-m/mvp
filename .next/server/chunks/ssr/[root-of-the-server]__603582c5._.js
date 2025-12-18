@@ -94,10 +94,36 @@ async function createLead(formData) {
 }
 async function updateLeadStatus(id, status) {
     const supabase = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["createClient"])();
-    await supabase.from("leads").update({
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {
+        error: "Unauthorized"
+    };
+    // 1. Update the Lead Status
+    const { error } = await supabase.from("leads").update({
         status
     }).eq("id", id);
+    if (error) return {
+        error: error.message
+    };
+    // 2. AUTOMATIC SUBSCRIPTION LOGIC
+    // If moving to 'subscriber', check if subscription exists, if not create one.
+    if (status === "subscriber") {
+        const { data: existingSub } = await supabase.from("subscriptions").select("id").eq("lead_id", id).single();
+        if (!existingSub) {
+            await supabase.from("subscriptions").insert({
+                user_id: user.id,
+                lead_id: id,
+                status: "active",
+                plan_name: "Standard Plan",
+                amount: 99.0,
+                billing_cycle: "monthly"
+            });
+        }
+    }
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])("/admin/leads");
+    return {
+        success: true
+    };
 }
 ;
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ensureServerEntryExports"])([
