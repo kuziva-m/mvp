@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Loader2, Database, Globe } from "lucide-react";
-import { toast } from "sonner"; // Ensure you have this installed, or use your toast lib
+import { toast } from "sonner";
 
 interface LeadGenClientProps {
   initialLeads: any[];
@@ -27,22 +27,23 @@ export function LeadGenClient({
   const [keyword, setKeyword] = useState("");
 
   async function handleGenerate() {
-    if (!keyword) return toast.error("Please enter a keyword");
+    if (!keyword) {
+      toast.error("Please enter a keyword");
+      return;
+    }
 
     setIsGenerating(true);
     try {
-      // Use Server Actions ideally, or API route for long-running tasks
       const res = await fetch("/api/admin/generate-test-leads", {
         method: "POST",
         body: JSON.stringify({ keyword }),
       });
 
       if (!res.ok) throw new Error("Generation failed");
-
       toast.success("Lead generation started!");
-      // Refresh logic would go here (e.g., router.refresh())
+      // Ideally trigger a refresh here, e.g., router.refresh()
     } catch (error) {
-      toast.error("Failed to start generation. Try again.");
+      toast.error("Failed to start generation.");
     } finally {
       setIsGenerating(false);
     }
@@ -50,7 +51,6 @@ export function LeadGenClient({
 
   return (
     <div className="space-y-8">
-      {/* Search / Action Area */}
       <Card>
         <CardHeader>
           <CardTitle>New Search</CardTitle>
@@ -81,14 +81,11 @@ export function LeadGenClient({
         </CardContent>
       </Card>
 
-      {/* Results Area */}
       <div className="grid gap-6">
         <h2 className="text-xl font-semibold">Recent Leads ({totalCount})</h2>
-
         {initialLeads.length === 0 ? (
           <div className="text-center p-12 border-2 border-dashed rounded-xl bg-muted/50">
             <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No leads found</h3>
             <p className="text-muted-foreground">
               Start a search above to populate your database.
             </p>
@@ -99,18 +96,20 @@ export function LeadGenClient({
               <Card key={lead.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-bold truncate">
-                    {lead.business_name || "Unknown Business"}
+                    {lead.business_name || "Unknown"}
                   </CardTitle>
                   <Badge variant={lead.email ? "default" : "secondary"}>
-                    {lead.email ? "Email Found" : "No Email"}
+                    {lead.email ? "Email" : "No Email"}
                   </Badge>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground mb-2">
-                    <Globe className="mr-2 h-3 w-3" />
-                    {lead.website || "No website"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
+                  {lead.website && (
+                    <div className="flex items-center text-xs text-muted-foreground mb-2">
+                      <Globe className="w-3 h-3 mr-1" />
+                      {lead.website}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-2">
                     Added: {new Date(lead.created_at).toLocaleDateString()}
                   </div>
                 </CardContent>

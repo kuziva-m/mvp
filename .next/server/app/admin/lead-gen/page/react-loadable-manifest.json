@@ -1,1 +1,12 @@
-{}
+{
+  "[project]/components/admin/top-nav.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/components/admin/top-nav.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/node_modules_@supabase_realtime-js_dist_module_65527103._.js",
+      "static/chunks/node_modules_@supabase_auth-js_dist_module_e6c70351._.js",
+      "static/chunks/node_modules_25c97e74._.js",
+      "static/chunks/components_55b411bc._.js",
+      "static/chunks/components_admin_top-nav_tsx_010d06f3._.js"
+    ]
+  }
+}

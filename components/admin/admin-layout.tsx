@@ -3,12 +3,12 @@
 import { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import dynamic from "next/dynamic"; // 1. Add dynamic import
+import dynamic from "next/dynamic";
 import { Sidebar } from "./sidebar";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
 import { useLayoutStore } from "@/lib/stores/layout-store";
 
-// 2. Fix Hydration Mismatch: Load TopNav only on client
+// Dynamic import for TopNav to prevent hydration mismatch
 const TopNav = dynamic(() => import("./top-nav").then((mod) => mod.TopNav), {
   ssr: false,
   loading: () => (
@@ -22,45 +22,61 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
-
-  // 3. Fix TypeScript Errors: Use correct store properties
-  // sidebarOpen = isMobileMenuOpen
-  // toggleSidebar = closeMobileMenu (toggles it off)
   const { sidebarOpen, toggleSidebar } = useLayoutStore();
 
   return (
-    <div className="min-h-screen bg-muted/40 dark:bg-muted/10">
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
+    <div className="min-h-screen bg-muted/40 dark:bg-muted/10 relative">
+      {/* 1. Desktop Sidebar Container 
+        - Hidden on mobile (lg:flex)
+        - Fixed position so it stays while scrolling
+        - Width 72 (w-72) to match standard sidebar width
+        - Z-index 50 to stay above content
+      */}
+      <div className="hidden lg:flex h-full w-72 flex-col fixed inset-y-0 z-50">
         <Sidebar />
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ease-in-out">
-          <TopNav />
-
-          <main className="flex-1 overflow-y-auto overflow-x-hidden focus:outline-none">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="h-full p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
       </div>
 
-      {/* Mobile Overlay */}
+      {/* 2. Main Content Wrapper 
+        - Padded left (lg:pl-72) to make room for the fixed sidebar
+        - Flex column to organize TopNav and Children
+      */}
+      <div className="lg:pl-72 flex flex-col min-h-screen transition-all duration-300 ease-in-out">
+        {/* Top Navigation */}
+        <div className="sticky top-0 z-40">
+          <TopNav />
+        </div>
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-7xl mx-auto w-full"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* 3. Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
-          onClick={toggleSidebar}
-        />
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={toggleSidebar}
+          />
+
+          {/* Mobile Sidebar */}
+          <div className="relative flex w-72 flex-col h-full bg-background border-r shadow-xl">
+            <Sidebar />
+          </div>
+        </div>
       )}
 
       <KeyboardShortcuts />

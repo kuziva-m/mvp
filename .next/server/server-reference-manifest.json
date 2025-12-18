@@ -1,21 +1,5 @@
 {
-  "node": {
-    "0030d1a09178c1e833a4029112a5d86a3e9603bce3": {
-      "workers": {
-        "app/admin/websites/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/websites/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/admin/websites/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false,
-          "exportedName": "generateWebsitesAction",
-          "filename": "app/admin/websites/actions.ts"
-        }
-      },
-      "layer": {
-        "app/admin/websites/page": "action-browser"
-      },
-      "filename": "app/admin/websites/actions.ts",
-      "exportedName": "generateWebsitesAction"
-    }
-  },
+  "node": {},
   "edge": {},
   "encryptionKey": "cypzipsIsI7TUKvkcjVhQ4HaPiF82eTKZLgBPYEPjag="
 }
