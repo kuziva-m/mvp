@@ -1,69 +1,61 @@
 import { createClient } from "@/lib/supabase/server";
 import { generateAICopy } from "./ai-generator";
-import { performQAChecks } from "./qa-service";
+import { QAService } from "./qa-service";
 import { selectTemplate } from "./template-selector";
 
 export async function createWebsiteForLead(
   leadId: string,
-  options: { quality: "basic" | "premium" }
+  options: { quality: "basic" | "premium" } = { quality: "basic" }
 ) {
   const supabase = await createClient();
 
-  // 1. Fetch Lead Data
-  const { data: lead, error } = await supabase
-    .from("leads")
-    .select("*")
-    .eq("id", leadId)
-    .single();
+  try {
+    // 1. Fetch Lead Data
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("id", leadId)
+      .single();
 
-  if (error || !lead) throw new Error("Lead not found");
+    if (!lead) throw new Error(`Lead not found: ${leadId}`);
 
-  // 2. Select Template based on Industry
-  const templateId = selectTemplate(lead, options.quality);
+    // 2. Select Template
+    // The selectTemplate function returns a string ID directly
+    const templateId = selectTemplate(lead, options.quality);
 
-  // 3. Generate AI Copy
-  const websiteContent = await generateAICopy({
-    businessName: lead.business_name || "New Business", // Handle distinct DB naming conventions (snake_case)
-    industry: lead.industry,
-    templateId: templateId,
-  });
+    // 3. Generate Content (AI)
+    // Pass a single object with properties as expected by generateAICopy
+    const content = await generateAICopy({
+      businessName: lead.business_name,
+      industry: lead.industry,
+      templateId: templateId,
+    });
 
-  // 4. Save Initial Draft
-  const { data: website, error: insertError } = await supabase
-    .from("websites")
-    .insert({
-      lead_id: leadId,
-      template_id: templateId,
-      content: websiteContent,
-      status: "draft",
-      subdomain: `${(lead.business_name || "site")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "-")}-${leadId.slice(0, 4)}`,
-    })
-    .select()
-    .single();
+    // 4. Mock Deployment (In a real app, this calls your React Builder + Vercel API)
+    const siteId = crypto.randomUUID();
+    const previewUrl = `https://mvp-agency-preview.vercel.app/preview/${siteId}`;
 
-  if (insertError)
-    throw new Error("Failed to create website record: " + insertError.message);
+    // 5. Perform QA Checks
+    const qaResult = await QAService.checkSite(previewUrl);
 
-  // 5. Run Quality Assurance
-  const qaResult = await performQAChecks(website.id, websiteContent);
-
-  // 6. Update Status based on QA
-  const finalStatus = qaResult.passed ? "generated" : "flagged";
-
-  await supabase
-    .from("websites")
-    .update({
-      status: finalStatus,
+    // 6. Save to Database
+    const { error } = await supabase.from("sites").insert({
+      id: siteId,
+      lead_id: lead.id,
+      template_id: templateId, // Pass the string directly
+      content: content,
+      preview_url: previewUrl,
+      qa_status: qaResult.passed ? "passed" : "failed",
       qa_score: qaResult.score,
-      qa_report: qaResult.report,
-    })
-    .eq("id", website.id);
+      status: "ready",
+      created_at: new Date().toISOString(),
+    });
 
-  return {
-    websiteId: website.id,
-    status: finalStatus,
-    report: qaResult.report,
-  };
+    if (error) throw error;
+
+    return { success: true, siteId, url: previewUrl, qa: qaResult };
+  } catch (error) {
+    console.error("Website Orchestration Failed:", error);
+    return { success: false, error: (error as Error).message };
+  }
 }

@@ -46,6 +46,9 @@ import {
   Eye,
   MousePointerClick,
   CheckCircle2,
+  Flame,
+  Snowflake,
+  Zap,
 } from "lucide-react";
 import { createLead, scrapeWebsite, updateLeadStatus } from "./actions";
 import { toast } from "sonner";
@@ -78,6 +81,27 @@ export default function LeadsPage() {
     setIsLoading(false);
   }
 
+  // Logic for Lead Temperature
+  function getLeadTemp(lead: Lead) {
+    if (lead.email_replied_at)
+      return {
+        label: "Hot",
+        color: "bg-red-100 text-red-700 border-red-200",
+        icon: Flame,
+      };
+    if (lead.email_opened_at || lead.email_clicked_at)
+      return {
+        label: "Warm",
+        color: "bg-orange-100 text-orange-700 border-orange-200",
+        icon: Zap,
+      };
+    return {
+      label: "New",
+      color: "bg-blue-100 text-blue-700 border-blue-200",
+      icon: Snowflake,
+    };
+  }
+
   // Handle the "Scrape" button
   async function handleScrape(url: string) {
     if (!url) return toast.error("Please enter a website URL");
@@ -104,7 +128,6 @@ export default function LeadsPage() {
   }
 
   async function handleStatusChange(id: string, newStatus: string) {
-    // Optimistic Update
     const originalLeads = [...leads];
     setLeads(
       leads.map((l) => (l.id === id ? { ...l, status: newStatus as any } : l))
@@ -121,17 +144,23 @@ export default function LeadsPage() {
       } else {
         toast.success("Status updated");
       }
-      // Re-fetch to get any server-side changes (like new subscription links)
       fetchLeads();
     }
   }
 
-  // Filter leads for tabs
-  const newLeads = leads.filter((l) => l.status === "new");
-  const warmLeads = leads.filter((l) =>
-    ["contacted", "warm"].includes(l.status)
+  // Filter leads based on temperature/status for tabs
+  // "New" = Actually new, never contacted
+  const newLeads = leads.filter(
+    (l) => !l.email_opened_at && !l.email_clicked_at && !l.email_replied_at
   );
-  const hotLeads = leads.filter((l) => l.status === "hot");
+
+  // "Warm" = Opened or Clicked but no reply
+  const warmLeads = leads.filter(
+    (l) => (l.email_opened_at || l.email_clicked_at) && !l.email_replied_at
+  );
+
+  // "Hot" = Replied
+  const hotLeads = leads.filter((l) => l.email_replied_at);
 
   return (
     <div className="space-y-6 p-6">
@@ -244,6 +273,9 @@ export default function LeadsPage() {
                         <SelectItem value="Clay">Clay</SelectItem>
                         <SelectItem value="ScrapeMaps">ScrapeMaps</SelectItem>
                         <SelectItem value="FB Ads">FB Ads</SelectItem>
+                        <SelectItem value="LeadsGorilla">
+                          LeadsGorilla
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -296,9 +328,6 @@ export default function LeadsPage() {
                     <CardTitle className="text-lg capitalize">
                       {tab} Leads
                     </CardTitle>
-                    <div className="flex gap-2">
-                      {/* Add Filters Here later */}
-                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -306,8 +335,8 @@ export default function LeadsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[280px]">Business</TableHead>
+                        <TableHead>Temperature</TableHead>
                         <TableHead>Contact</TableHead>
-                        <TableHead>Engagement</TableHead>
                         <TableHead>Source</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -319,134 +348,112 @@ export default function LeadsPage() {
                         : tab === "warm"
                         ? warmLeads
                         : hotLeads
-                      ).map((lead) => (
-                        <TableRow key={lead.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg border bg-white flex items-center justify-center overflow-hidden">
-                                {lead.logo_url ? (
-                                  <img
-                                    src={lead.logo_url}
-                                    className="h-full w-full object-contain"
-                                    alt=""
-                                  />
-                                ) : (
-                                  <Globe className="h-5 w-5 text-gray-400" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-medium">
-                                  {lead.business_name}
+                      ).map((lead) => {
+                        const temp = getLeadTemp(lead);
+                        return (
+                          <TableRow key={lead.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg border bg-white flex items-center justify-center overflow-hidden">
+                                  {lead.logo_url ? (
+                                    <img
+                                      src={lead.logo_url}
+                                      className="h-full w-full object-contain"
+                                      alt=""
+                                    />
+                                  ) : (
+                                    <Globe className="h-5 w-5 text-gray-400" />
+                                  )}
                                 </div>
-                                <a
-                                  href={lead.website}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                                >
-                                  {lead.website}{" "}
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Mail className="h-3 w-3" /> {lead.email || "-"}
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Phone className="h-3 w-3" />{" "}
-                                {lead.phone || "-"}
-                              </div>
-                            </div>
-                          </TableCell>
-
-                          {/* NEW: Engagement Columns */}
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="flex items-center gap-1"
-                                title={
-                                  lead.email_opened_at
-                                    ? "Email Opened"
-                                    : "Not Opened"
-                                }
-                              >
-                                <Eye
-                                  className={`h-4 w-4 ${
-                                    lead.email_opened_at
-                                      ? "text-green-500"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              </div>
-                              <div
-                                className="flex items-center gap-1"
-                                title={
-                                  lead.email_clicked_at
-                                    ? "Link Clicked"
-                                    : "Not Clicked"
-                                }
-                              >
-                                <MousePointerClick
-                                  className={`h-4 w-4 ${
-                                    lead.email_clicked_at
-                                      ? "text-blue-500"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              </div>
-                              {lead.email_replied_at && (
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-orange-100 text-orange-700 hover:bg-orange-100"
-                                >
-                                  Replied
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            <Badge variant="outline" className="bg-slate-100">
-                              {lead.source}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              defaultValue={lead.status}
-                              onValueChange={(val) =>
-                                handleStatusChange(lead.id, val)
-                              }
-                            >
-                              <SelectTrigger className="h-8 w-[130px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="warm">Warm</SelectItem>
-                                <SelectItem value="hot">Hot</SelectItem>
-                                <SelectItem
-                                  value="subscriber"
-                                  className="text-green-600 font-medium focus:text-green-700"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-3 w-3" />{" "}
-                                    Subscriber
+                                <div>
+                                  <div className="font-medium">
+                                    {lead.business_name}
                                   </div>
-                                </SelectItem>
-                                <SelectItem value="closed">Closed</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                  <a
+                                    href={lead.website}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                                  >
+                                    {lead.website}{" "}
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              </div>
+                            </TableCell>
+
+                            {/* Temperature Badge */}
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`${temp.color} gap-1`}
+                              >
+                                <temp.icon className="w-3 h-3" /> {temp.label}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <Mail className="h-3 w-3" />{" "}
+                                  {lead.email || "-"}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <Phone className="h-3 w-3" />{" "}
+                                  {lead.phone || "-"}
+                                </div>
+                              </div>
+                            </TableCell>
+
+                            {/* Source Column */}
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className="bg-slate-100 font-normal"
+                              >
+                                {lead.source || "Manual"}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell>
+                              <Select
+                                defaultValue={lead.status}
+                                onValueChange={(val) =>
+                                  handleStatusChange(lead.id, val)
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-[130px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="contacted">
+                                    Contacted
+                                  </SelectItem>
+                                  <SelectItem value="warm">Warm</SelectItem>
+                                  <SelectItem value="hot">Hot</SelectItem>
+                                  <SelectItem
+                                    value="subscriber"
+                                    className="text-green-600 font-medium"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle2 className="h-3 w-3" />{" "}
+                                      Subscriber
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="closed">Closed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm">
+                                Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       {(tab === "new"
                         ? newLeads
                         : tab === "warm"

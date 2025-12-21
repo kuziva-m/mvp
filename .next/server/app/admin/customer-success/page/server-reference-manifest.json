@@ -1,0 +1,20 @@
+{
+  "node": {
+    "00104c1e859e67e008ede8afe9a80d4e5034fc7051": {
+      "workers": {
+        "app/admin/customer-success/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/customer-success/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        }
+      },
+      "layer": {
+        "app/admin/customer-success/page": "action-browser"
+      },
+      "exportedName": "logoutBusiness",
+      "filename": "app/actions/auth-mock.ts"
+    }
+  },
+  "edge": {}
+}

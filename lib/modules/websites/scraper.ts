@@ -1,141 +1,89 @@
-import puppeteer from 'puppeteer'
-import type { ScrapedData } from '@/types'
+import puppeteer from "puppeteer";
+
+// Define the shape of scraped data
+export interface ScrapedData {
+  businessName?: string;
+  logoUrl?: string;
+  copyAnalysis?: string;
+  email?: string;
+  phone?: string;
+  description?: string;
+}
 
 export async function scrapeWebsite(url: string): Promise<ScrapedData | null> {
-  let browser = null
+  let browser = null;
 
   try {
-    console.log(`Starting scrape for: ${url}`)
+    console.log(`Starting scrape for: ${url}`);
 
+    // Launch puppeteer (ensure you have it installed or use a lightweight fetch alternative if preferred)
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    })
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
-    const page = await browser.newPage()
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
 
-    // Set timeout and viewport
-    await page.setViewport({ width: 1920, height: 1080 })
+    const data = await page.evaluate(() => {
+      // 1. Logo Extraction Strategy
+      // Check OG Image, Favicon, or img tags with 'logo' in class/id
+      const ogImage = document
+        .querySelector('meta[property="og:image"]')
+        ?.getAttribute("content");
 
-    // Navigate to the URL
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
-    })
-
-    // Extract data from the page
-    const scrapedData = await page.evaluate(() => {
-      // Extract logo
-      const findLogo = (): string | null => {
-        const logoSelectors = [
-          'img[alt*="logo" i]',
-          'img[class*="logo" i]',
-          'img[id*="logo" i]',
-          '.logo img',
-          '#logo img',
-          'header img:first-of-type',
-          'nav img:first-of-type',
-        ]
-
-        for (const selector of logoSelectors) {
-          const img = document.querySelector(selector) as HTMLImageElement
-          if (img?.src) return img.src
-        }
-        return null
+      let logoUrl = ogImage;
+      if (!logoUrl) {
+        const logoImg = document.querySelector(
+          'img[src*="logo"], img[class*="logo"], img[id*="logo"]'
+        ) as HTMLImageElement;
+        if (logoImg) logoUrl = logoImg.src;
       }
 
-      // Extract colors from computed styles
-      const extractColors = () => {
-        const primary = window.getComputedStyle(
-          document.querySelector('header') ||
-            document.querySelector('nav') ||
-            document.body
-        ).backgroundColor
+      // 2. Copy Analysis Strategy
+      // Grab main headings and meta description
+      const title = document.title;
+      const description =
+        document
+          .querySelector('meta[name="description"]')
+          ?.getAttribute("content") || "";
+      const h1s = Array.from(document.querySelectorAll("h1"))
+        .map((h) => h.innerText)
+        .join(" ");
+      const h2s = Array.from(document.querySelectorAll("h2"))
+        .map((h) => h.innerText)
+        .join(" ");
+      const bodyText = document.body.innerText.substring(0, 1000); // Sample first 1000 chars
 
-        const buttons = document.querySelectorAll('button, .button, .btn')
-        const secondary =
-          buttons.length > 0
-            ? window.getComputedStyle(buttons[0] as Element).backgroundColor
-            : null
+      // Simple concatenation for the AI to analyze later
+      const copyAnalysis = `Title: ${title}\nDescription: ${description}\nHeadlines: ${h1s} ${h2s}\nSample Text: ${bodyText.replace(
+        /\n/g,
+        " "
+      )}`;
 
-        const text = window.getComputedStyle(
-          document.querySelector('p') ||
-            document.querySelector('body') ||
-            document.body
-        ).color
+      // 3. Contact Info (Simple Regex)
+      const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+      const phoneRegex =
+        /((\+?\d{1,3})?[-. ]?)?\(?(\d{3})\)?[-. ]?(\d{3})[-. ]?(\d{4})/g;
 
-        return {
-          primary: primary !== 'rgba(0, 0, 0, 0)' ? primary : null,
-          secondary: secondary !== 'rgba(0, 0, 0, 0)' ? secondary : null,
-          text: text || null,
-        }
-      }
-
-      // Extract headings
-      const extractHeadings = (): string[] => {
-        const headings: string[] = []
-        const h1s = document.querySelectorAll('h1')
-        const h2s = document.querySelectorAll('h2')
-
-        h1s.forEach((h) => {
-          const text = h.textContent?.trim()
-          if (text) headings.push(text)
-        })
-        h2s.forEach((h) => {
-          const text = h.textContent?.trim()
-          if (text) headings.push(text)
-        })
-
-        return headings.slice(0, 10) // Limit to 10 headings
-      }
-
-      // Extract meta description
-      const metaDescription =
-        (
-          document.querySelector(
-            'meta[name="description"]'
-          ) as HTMLMetaElement
-        )?.content || null
-
-      // Extract page title
-      const pageTitle = document.title || null
+      const emailMatch = document.body.innerHTML.match(emailRegex);
+      const phoneMatch = document.body.innerText.match(phoneRegex);
 
       return {
-        logoUrl: findLogo(),
-        colors: extractColors(),
-        headings: extractHeadings(),
-        metaDescription,
-        pageTitle,
-      }
-    })
+        businessName: title,
+        logoUrl: logoUrl || undefined,
+        copyAnalysis: copyAnalysis,
+        email: emailMatch ? emailMatch[0] : undefined,
+        phone: phoneMatch ? phoneMatch[0] : undefined,
+        description,
+      };
+    });
 
-    // Take screenshot
-    const screenshot = await page.screenshot({
-      fullPage: true,
-      encoding: 'base64',
-    })
-
-    await browser.close()
-
-    const result: ScrapedData = {
-      ...scrapedData,
-      screenshot: screenshot as string,
-      scrapedAt: new Date().toISOString(),
-    }
-
-    console.log('Scraping completed successfully')
-    return result
+    return data;
   } catch (error) {
-    console.error('Scraping error:', error)
-
-    if (browser) {
-      try {
-        await browser.close()
-      } catch (closeError) {
-        console.error('Error closing browser:', closeError)
-      }
-    }
-
-    return null
+    console.error("Scraping failed:", error);
+    return null;
+  } finally {
+    if (browser) await browser.close();
   }
 }

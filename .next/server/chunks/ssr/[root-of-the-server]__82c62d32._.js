@@ -66,39 +66,48 @@ async function generateAICopy({ businessName, industry, templateId }) {
 "use strict";
 
 __turbopack_context__.s([
-    "performQAChecks",
-    ()=>performQAChecks
+    "QAService",
+    ()=>QAService
 ]);
-async function performQAChecks(websiteId, content) {
-    const issues = [];
-    let score = 100;
-    // 1. Basic Validation
-    if (!content.heroHeadline) {
-        issues.push("Critical: Hero Headline is missing.");
-        score -= 30;
+class QAService {
+    static async checkSite(url) {
+        if (!url) return {
+            passed: false,
+            score: 0,
+            issues: [
+                "No URL provided"
+            ]
+        };
+        try {
+            const response = await fetch(url, {
+                method: "HEAD"
+            }); // Lightweight check
+            if (response.status === 200) {
+                return {
+                    passed: true,
+                    score: 100,
+                    issues: []
+                };
+            } else {
+                return {
+                    passed: false,
+                    score: 0,
+                    issues: [
+                        `Site returned status code: ${response.status}`
+                    ]
+                };
+            }
+        } catch (error) {
+            return {
+                passed: false,
+                score: 0,
+                issues: [
+                    "Site is unreachable",
+                    error.message
+                ]
+            };
+        }
     }
-    if (!content.contactEmail || !content.contactEmail.includes("@")) {
-        issues.push("Critical: Invalid contact email.");
-        score -= 30;
-    }
-    // 2. Strict Placeholder Check
-    const placeholderPatterns = [
-        /lorem ipsum/i,
-        /insert text/i
-    ];
-    const contentString = JSON.stringify(content);
-    if (placeholderPatterns.some((p)=>p.test(contentString))) {
-        issues.push("Flagged: Placeholder text detected.");
-        score -= 50;
-    }
-    const passed = score >= 80;
-    return {
-        passed,
-        score,
-        report: issues.length > 0 ? issues : [
-            "QA Passed: No issues found."
-        ]
-    };
 }
 }),
 "[project]/lib/modules/websites/template-selector.ts [app-rsc] (ecmascript)", ((__turbopack_context__) => {
@@ -133,42 +142,55 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2
 ;
 ;
 ;
-async function createWebsiteForLead(leadId, options) {
+async function createWebsiteForLead(leadId, options = {
+    quality: "basic"
+}) {
     const supabase = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["createClient"])();
-    // 1. Fetch Lead Data
-    const { data: lead, error } = await supabase.from("leads").select("*").eq("id", leadId).single();
-    if (error || !lead) throw new Error("Lead not found");
-    // 2. Select Template based on Industry
-    const templateId = (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$template$2d$selector$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["selectTemplate"])(lead, options.quality);
-    // 3. Generate AI Copy
-    const websiteContent = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$ai$2d$generator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateAICopy"])({
-        businessName: lead.business_name || "New Business",
-        industry: lead.industry,
-        templateId: templateId
-    });
-    // 4. Save Initial Draft
-    const { data: website, error: insertError } = await supabase.from("websites").insert({
-        lead_id: leadId,
-        template_id: templateId,
-        content: websiteContent,
-        status: "draft",
-        subdomain: `${(lead.business_name || "site").toLowerCase().replace(/[^a-z0-9]/g, "-")}-${leadId.slice(0, 4)}`
-    }).select().single();
-    if (insertError) throw new Error("Failed to create website record: " + insertError.message);
-    // 5. Run Quality Assurance
-    const qaResult = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$qa$2d$service$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["performQAChecks"])(website.id, websiteContent);
-    // 6. Update Status based on QA
-    const finalStatus = qaResult.passed ? "generated" : "flagged";
-    await supabase.from("websites").update({
-        status: finalStatus,
-        qa_score: qaResult.score,
-        qa_report: qaResult.report
-    }).eq("id", website.id);
-    return {
-        websiteId: website.id,
-        status: finalStatus,
-        report: qaResult.report
-    };
+    try {
+        // 1. Fetch Lead Data
+        const { data: lead } = await supabase.from("leads").select("*").eq("id", leadId).single();
+        if (!lead) throw new Error(`Lead not found: ${leadId}`);
+        // 2. Select Template
+        // The selectTemplate function returns a string ID directly
+        const templateId = (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$template$2d$selector$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["selectTemplate"])(lead, options.quality);
+        // 3. Generate Content (AI)
+        // Pass a single object with properties as expected by generateAICopy
+        const content = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$ai$2d$generator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateAICopy"])({
+            businessName: lead.business_name,
+            industry: lead.industry,
+            templateId: templateId
+        });
+        // 4. Mock Deployment (In a real app, this calls your React Builder + Vercel API)
+        const siteId = crypto.randomUUID();
+        const previewUrl = `https://mvp-agency-preview.vercel.app/preview/${siteId}`;
+        // 5. Perform QA Checks
+        const qaResult = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$qa$2d$service$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["QAService"].checkSite(previewUrl);
+        // 6. Save to Database
+        const { error } = await supabase.from("sites").insert({
+            id: siteId,
+            lead_id: lead.id,
+            template_id: templateId,
+            content: content,
+            preview_url: previewUrl,
+            qa_status: qaResult.passed ? "passed" : "failed",
+            qa_score: qaResult.score,
+            status: "ready",
+            created_at: new Date().toISOString()
+        });
+        if (error) throw error;
+        return {
+            success: true,
+            siteId,
+            url: previewUrl,
+            qa: qaResult
+        };
+    } catch (error) {
+        console.error("Website Orchestration Failed:", error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
 }
 }),
 "[project]/app/admin/websites/actions.ts [app-rsc] (ecmascript)", ((__turbopack_context__) => {

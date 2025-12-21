@@ -1,41 +1,33 @@
-interface QAResult {
-  passed: boolean;
-  score: number;
-  report: string[];
-}
+export class QAService {
+  static async checkSite(url: string): Promise<{
+    passed: boolean;
+    score: number;
+    issues: string[];
+  }> {
+    if (!url) return { passed: false, score: 0, issues: ["No URL provided"] };
 
-export async function performQAChecks(
-  websiteId: string,
-  content: any
-): Promise<QAResult> {
-  const issues: string[] = [];
-  let score = 100;
+    try {
+      const response = await fetch(url, { method: "HEAD" }); // Lightweight check
 
-  // 1. Basic Validation
-  if (!content.heroHeadline) {
-    issues.push("Critical: Hero Headline is missing.");
-    score -= 30;
+      if (response.status === 200) {
+        return {
+          passed: true,
+          score: 100,
+          issues: [],
+        };
+      } else {
+        return {
+          passed: false,
+          score: 0,
+          issues: [`Site returned status code: ${response.status}`],
+        };
+      }
+    } catch (error) {
+      return {
+        passed: false,
+        score: 0,
+        issues: ["Site is unreachable", (error as Error).message],
+      };
+    }
   }
-
-  if (!content.contactEmail || !content.contactEmail.includes("@")) {
-    issues.push("Critical: Invalid contact email.");
-    score -= 30;
-  }
-
-  // 2. Strict Placeholder Check
-  const placeholderPatterns = [/lorem ipsum/i, /insert text/i];
-  const contentString = JSON.stringify(content);
-
-  if (placeholderPatterns.some((p) => p.test(contentString))) {
-    issues.push("Flagged: Placeholder text detected.");
-    score -= 50;
-  }
-
-  const passed = score >= 80;
-
-  return {
-    passed,
-    score,
-    report: issues.length > 0 ? issues : ["QA Passed: No issues found."],
-  };
 }
