@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 16, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/middleware.ts"],"sourcesContent":["// middleware.ts\r\nimport { NextResponse, type NextRequest } from \"next/server\";\r\n\r\nexport async function middleware(request: NextRequest) {\r\n  // Pass through everything - Authentication is disabled for Admin Panel\r\n  return NextResponse.next();\r\n}\r\n\r\nexport const config = {\r\n  matcher: [\r\n    /*\r\n     * Match all request paths except for the _next/static, _next/image and favicon.ico\r\n     */\r\n    \"/((?!_next/static|_next/image|favicon.ico).*)\",\r\n  ],\r\n};\r\n"],"names":[],"mappings":"AAAA,gBAAgB;;;;;;;AAChB;AAAA;;AAEO,eAAe,WAAW,OAAoB;IACnD,uEAAuE;IACvE,OAAO,gMAAY,CAAC,IAAI;AAC1B;AAEO,MAAM,SAAS;IACpB,SAAS;QACP;;KAEC,GACD;KACD;AACH"}}]
+}

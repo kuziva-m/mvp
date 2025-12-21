@@ -1,6 +1,13 @@
 "use client";
 
-import { Bell, Search, User, LogOut, Settings, CreditCard } from "lucide-react";
+import {
+  Bell,
+  Search,
+  User as UserIcon,
+  LogOut,
+  Settings,
+  CreditCard,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,128 +19,85 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { logoutBusiness } from "@/app/actions/auth-mock";
 
-export function TopNav() {
-  const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string>("Loading...");
-  const [userInitials, setUserInitials] = useState<string>("..");
+interface TopNavProps {
+  user?: {
+    email?: string;
+    business_name?: string | null;
+    role?: string;
+  } | null;
+}
 
-  // 1. Fetch Real User Data
-  useEffect(() => {
-    const getUser = async () => {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user?.email) {
-        setUserEmail(user.email);
-        setUserInitials(user.email.substring(0, 2).toUpperCase());
-      }
-    };
-    getUser();
-  }, []);
-
-  // 2. Handle Logout
-  const handleLogout = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh(); // Clear cache so middleware re-runs
-  };
-
+export function TopNav({ user }: TopNavProps) {
   return (
-    <div className="border-b bg-white px-6 py-3">
-      <div className="flex items-center justify-between">
-        {/* Search Bar */}
-        <div className="relative w-96">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search leads, clients, or websites..."
-            className="pl-8"
-          />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5 text-slate-500" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9 border border-slate-200">
-                  {/* Ideally, fetch avatar_url from public.users table */}
-                  <AvatarImage src="" alt="User" />
-                  <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">My Account</p>
-                  <p className="text-xs leading-none text-muted-foreground truncate">
-                    {userEmail}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-
-              {/* 3. Link Real Pages */}
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/admin/settings/profile"
-                  className="cursor-pointer w-full flex items-center"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/admin/subscriptions"
-                  className="cursor-pointer w-full flex items-center"
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/admin/settings"
-                  className="cursor-pointer w-full flex items-center"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem
-                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
+      {/* Search Bar */}
+      <div className="w-96 relative hidden md:block">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Search leads, sites, tickets..."
+          className="pl-9 w-full bg-background/50 border-muted"
+        />
       </div>
-    </div>
+
+      {/* Right Actions */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+              <Avatar className="h-9 w-9">
+                <AvatarImage
+                  src="/avatars/01.png"
+                  alt={user?.business_name || "User"}
+                />
+                <AvatarFallback>
+                  {user?.business_name?.substring(0, 2).toUpperCase() || "AD"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">
+                  {user?.business_name || "Admin User"}
+                </p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email || "admin@example.com"}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>Billing</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => logoutBusiness()}
+              className="text-red-600 focus:text-red-600 cursor-pointer"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
   );
 }

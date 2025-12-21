@@ -1,5 +1,50 @@
 {
-  "node": {},
+  "node": {
+    "00104c1e859e67e008ede8afe9a80d4e5034fc7051": {
+      "workers": {
+        "app/admin/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        },
+        "app/admin/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        },
+        "app/select-business/page": {
+          "moduleId": "[project]/.next-internal/server/app/select-business/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        }
+      },
+      "layer": {
+        "app/admin/dashboard/page": "action-browser",
+        "app/admin/page": "action-browser",
+        "app/select-business/page": "rsc"
+      },
+      "filename": "app/actions/auth-mock.ts",
+      "exportedName": "logoutBusiness"
+    },
+    "40d2e456c5af569b7573614988b7693606d5b976b9": {
+      "workers": {
+        "app/select-business/page": {
+          "moduleId": "[project]/.next-internal/server/app/select-business/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "selectBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        }
+      },
+      "layer": {
+        "app/select-business/page": "rsc"
+      },
+      "filename": "app/actions/auth-mock.ts",
+      "exportedName": "selectBusiness"
+    }
+  },
   "edge": {},
   "encryptionKey": "cypzipsIsI7TUKvkcjVhQ4HaPiF82eTKZLgBPYEPjag="
 }

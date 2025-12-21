@@ -1,124 +1,62 @@
-"use client";
+import { Suspense } from "react";
+import { LeadGenClient } from "./lead-gen-client";
+import { createClient } from "@/lib/supabase/server";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, Database, Globe } from "lucide-react";
-import { toast } from "sonner"; // Ensure you have this installed, or use your toast lib
+// Force dynamic rendering so data is always fresh
+export const dynamic = "force-dynamic";
 
-interface LeadGenClientProps {
-  initialLeads: any[];
-  totalCount: number;
+async function getLeadGenData() {
+  const supabase = await createClient();
+
+  // Fetch data safely
+  const { data: recentLeads } = await supabase
+    .from("leads")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  // Get count safely
+  const { count } = await supabase
+    .from("leads")
+    .select("*", { count: "exact", head: true });
+
+  return {
+    recentLeads: recentLeads || [],
+    totalLeads: count || 0,
+  };
 }
 
-export function LeadGenClient({
-  initialLeads,
-  totalCount,
-}: LeadGenClientProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [keyword, setKeyword] = useState("");
-
-  async function handleGenerate() {
-    if (!keyword) return toast.error("Please enter a keyword");
-
-    setIsGenerating(true);
-    try {
-      // Use Server Actions ideally, or API route for long-running tasks
-      const res = await fetch("/api/admin/generate-test-leads", {
-        method: "POST",
-        body: JSON.stringify({ keyword }),
-      });
-
-      if (!res.ok) throw new Error("Generation failed");
-
-      toast.success("Lead generation started!");
-      // Refresh logic would go here (e.g., router.refresh())
-    } catch (error) {
-      toast.error("Failed to start generation. Try again.");
-    } finally {
-      setIsGenerating(false);
-    }
-  }
+export default async function LeadGenPage() {
+  const data = await getLeadGenData();
 
   return (
-    <div className="space-y-8">
-      {/* Search / Action Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>New Search</CardTitle>
-          <CardDescription>
-            Enter an industry or keyword to find new leads
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-4">
-          <Input
-            placeholder="e.g. Plumbers in New York"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            className="max-w-md"
-          />
-          <Button onClick={handleGenerate} disabled={isGenerating}>
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Find Leads
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Results Area */}
-      <div className="grid gap-6">
-        <h2 className="text-xl font-semibold">Recent Leads ({totalCount})</h2>
-
-        {initialLeads.length === 0 ? (
-          <div className="text-center p-12 border-2 border-dashed rounded-xl bg-muted/50">
-            <Database className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No leads found</h3>
-            <p className="text-muted-foreground">
-              Start a search above to populate your database.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {initialLeads.map((lead) => (
-              <Card key={lead.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-base font-bold truncate">
-                    {lead.business_name || "Unknown Business"}
-                  </CardTitle>
-                  <Badge variant={lead.email ? "default" : "secondary"}>
-                    {lead.email ? "Email Found" : "No Email"}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground mb-2">
-                    <Globe className="mr-2 h-3 w-3" />
-                    {lead.website || "No website"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Added: {new Date(lead.created_at).toLocaleDateString()}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+    <div className="space-y-6 p-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Lead Generation</h1>
+          <p className="text-muted-foreground">
+            Find and enrich new business leads.
+          </p>
+        </div>
       </div>
+
+      <Suspense fallback={<LeadGenSkeleton />}>
+        <LeadGenClient
+          initialLeads={data.recentLeads}
+          totalCount={data.totalLeads}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+function LeadGenSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {[...Array(4)].map((_, i) => (
+        <Skeleton key={i} className="h-32 rounded-xl bg-gray-100" />
+      ))}
     </div>
   );
 }
