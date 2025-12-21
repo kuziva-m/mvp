@@ -5,7 +5,7 @@ import { DashboardClient } from "./dashboard-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, DollarSign, Activity } from "lucide-react";
 
-// Define interfaces for our data
+// Define interfaces for database response
 interface Lead {
   id: string;
   status: string;
@@ -19,6 +19,7 @@ interface Subscription {
 
 interface RevenueEvent {
   amount: number;
+  event_date: string;
 }
 
 export default async function DashboardPage() {
@@ -27,34 +28,31 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   // 1. Fetch data for the selected business
-  // We run these in parallel for performance
   const [leadsResult, subscriptionsResult, revenueResult] = await Promise.all([
-    // Get Leads
     supabase
       .from("leads")
       .select("id, status, value_estimated")
       .eq("user_id", mockUserId),
 
-    // Get Subscriptions
     supabase
       .from("subscriptions")
       .select("status, amount")
       .eq("user_id", mockUserId),
 
-    // Get Revenue Events (To calculate total revenue)
-    // Note: Since revenue_events links to leads, we usually join.
-    // For simplicity with this schema, we assume we fetch events for leads owned by this user.
     supabase
       .from("revenue_events")
-      .select("amount, leads!inner(user_id)")
-      .eq("leads.user_id", mockUserId),
+      .select("amount, event_date, leads!inner(user_id)")
+      .eq("leads.user_id", mockUserId)
+      .order("event_date", { ascending: true })
+      .limit(30),
   ]);
 
   const leads = (leadsResult.data || []) as Lead[];
   const subscriptions = (subscriptionsResult.data || []) as Subscription[];
-  // @ts-ignore - Supabase type inference with joins can be tricky, casting safely here
+  // @ts-ignore - Supabase type inference with inner joins can be complex
   const revenueEvents = (revenueResult.data || []).map((r: any) => ({
-    amount: r.amount,
+    amount: Number(r.amount),
+    event_date: r.event_date,
   })) as RevenueEvent[];
 
   // 2. Calculate Metrics
@@ -65,58 +63,64 @@ export default async function DashboardPage() {
 
   // Calculate Revenue
   const totalRevenue = revenueEvents.reduce(
-    (sum, event) => sum + (Number(event.amount) || 0),
+    (sum, event) => sum + (event.amount || 0),
     0
   );
 
-  // Calculate Pipeline Value (Estimated value of leads)
+  // Calculate Pipeline Value
   const pipelineValue = leads.reduce(
     (sum, lead) => sum + (Number(lead.value_estimated) || 0),
     0
   );
 
-  // 3. Prepare data for Client Component
-  const dashboardData = {
-    metrics: [
-      {
-        title: "Total Revenue",
-        value: `$${totalRevenue.toLocaleString()}`,
-        change: "+12.5%", // Placeholder - needs historical data to calculate real change
-        icon: DollarSign,
-      },
-      {
-        title: "Active Subscriptions",
-        value: activeSubscriptions.toString(),
-        change: "+2",
-        icon: CreditCard,
-      },
-      {
-        title: "Total Leads",
-        value: totalLeads.toString(),
-        change: "+5",
-        icon: Users,
-      },
-      {
-        title: "Pipeline Value",
-        value: `$${pipelineValue.toLocaleString()}`,
-        change: "+4.3%",
-        icon: Activity,
-      },
-    ],
-    // Pass raw data if charts need it
-    chartData: revenueEvents.map((e, i) => ({
-      name: `Event ${i}`,
-      value: e.amount,
+  // 3. Define Metrics for Server Rendering (Icons allowed here)
+  const metricCards = [
+    {
+      title: "Total Revenue",
+      value: `$${totalRevenue.toLocaleString()}`,
+      change: "+12.5%", // You would calculate this by comparing prev month
+      icon: DollarSign,
+    },
+    {
+      title: "Active Subscriptions",
+      value: activeSubscriptions.toString(),
+      change: "+2",
+      icon: CreditCard,
+    },
+    {
+      title: "Total Leads",
+      value: totalLeads.toString(),
+      change: "+5",
+      icon: Users,
+    },
+    {
+      title: "Pipeline Value",
+      value: `$${pipelineValue.toLocaleString()}`,
+      change: "+4.3%",
+      icon: Activity,
+    },
+  ];
+
+  // 4. Prepare Pure Data for Client Component (NO ICONS/FUNCTIONS)
+  // Only pass serializable JSON data (strings, numbers, arrays, plain objects)
+  const clientChartData = {
+    revenueSeries: revenueEvents.map((e) => ({
+      x: new Date(e.event_date).toLocaleDateString(),
+      y: e.amount,
     })),
+    leadStatusCounts: leads.reduce((acc: any, lead) => {
+      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      return acc;
+    }, {}),
   };
 
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
 
-      {/* Metric Cards */}
+      {/* Metric Cards - Rendered on Server */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {dashboardData.metrics.map((metric) => (
+        {metricCards.map((metric) => (
           <Card key={metric.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -134,9 +138,9 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Main Dashboard Client Component (Charts, etc) */}
+      {/* Charts - Rendered on Client */}
       <Suspense fallback={<div>Loading charts...</div>}>
-        <DashboardClient data={dashboardData} />
+        <DashboardClient data={clientChartData} />
       </Suspense>
     </div>
   );

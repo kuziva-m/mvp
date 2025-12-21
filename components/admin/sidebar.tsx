@@ -14,6 +14,14 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
+  Search,
+  Magnet,
+  HeartHandshake,
+  DollarSign,
+  Mail,
+  Cpu,
+  ClipboardCheck,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,16 +31,37 @@ interface SidebarProps {
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
+
+  // Growth Tools
+  { icon: Search, label: "Lead Gen", href: "/admin/lead-gen" },
+  { icon: Magnet, label: "Lead Magnet", href: "/admin/lead-magnet" },
   { icon: Users, label: "Leads", href: "/admin/leads" },
+
+  // Production
   { icon: Globe, label: "Websites", href: "/admin/websites" },
+  { icon: Mail, label: "Email Templates", href: "/admin/email-templates" },
+
+  // Operations & Success
+  {
+    icon: HeartHandshake,
+    label: "Customer Success",
+    href: "/admin/customer-success",
+  },
   { icon: MessageSquare, label: "Support", href: "/admin/support" },
-  { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+  { icon: ClipboardCheck, label: "QA Reviews", href: "/admin/qa" },
+
+  // Business
+  { icon: DollarSign, label: "Financials", href: "/admin/financials" },
   { icon: CreditCard, label: "Subscriptions", href: "/admin/subscriptions" },
+  { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+
+  // System
+  { icon: Cpu, label: "Workers", href: "/admin/workers" },
+  { icon: Activity, label: "Diagnostics", href: "/admin/diagnostics" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
 export function Sidebar({ businessName }: SidebarProps) {
-  // Correctly map the store properties to the variables used in this component
   const { sidebarCollapsed: isCollapsed, collapseSidebar: toggleCollapse } =
     useLayoutStore();
   const pathname = usePathname();

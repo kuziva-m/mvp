@@ -1,7 +1,16 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/admin/analytics/page": "app/admin/analytics/page.js",
   "/admin/dashboard/page": "app/admin/dashboard/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/page": "app/page.js",
-  "/select-business/page": "app/select-business/page.js"
+  "/admin/email-templates/page": "app/admin/email-templates/page.js",
+  "/admin/lead-gen/page": "app/admin/lead-gen/page.js",
+  "/admin/lead-magnet/page": "app/admin/lead-magnet/page.js",
+  "/admin/leads/page": "app/admin/leads/page.js",
+  "/admin/settings/page": "app/admin/settings/page.js",
+  "/admin/subscriptions/page": "app/admin/subscriptions/page.js",
+  "/admin/support/page": "app/admin/support/page.js",
+  "/admin/websites/page": "app/admin/websites/page.js",
+  "/api/admin/lead-magnet/stats/route": "app/api/admin/lead-magnet/stats/route.js",
+  "/api/admin/lead-magnet/submissions/route": "app/api/admin/lead-magnet/submissions/route.js",
+  "/api/admin/subscriptions/route": "app/api/admin/subscriptions/route.js"
 }
