@@ -2,12 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-<<<<<<< HEAD
 import { convertLeadToSubscription } from "@/lib/modules/payments/subscription-manager";
 
-// --- EXISTING FUNCTIONS (Kept intact) ---
-=======
->>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
+// --- EXISTING FUNCTIONS ---
 
 // MOCK SCRAPER: Simulates analyzing a website
 export async function scrapeWebsite(url: string) {
@@ -77,36 +74,13 @@ export async function updateLeadStatus(id: string, status: string) {
   if (error) return { error: error.message };
 
   // 2. AUTOMATIC SUBSCRIPTION LOGIC
-<<<<<<< HEAD
   if (status === "subscriber") {
-    // We can reuse the shared module logic here too if we want
     await convertLeadToSubscription(id);
-=======
-  // If moving to 'subscriber', check if subscription exists, if not create one.
-  if (status === "subscriber") {
-    const { data: existingSub } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("lead_id", id)
-      .single();
-
-    if (!existingSub) {
-      await supabase.from("subscriptions").insert({
-        user_id: user.id,
-        lead_id: id,
-        status: "active",
-        plan_name: "Standard Plan", // Default
-        amount: 99.0, // Default
-        billing_cycle: "monthly", // Default
-      });
-    }
->>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
   }
 
   revalidatePath("/admin/leads");
   return { success: true };
 }
-<<<<<<< HEAD
 
 // --- NEW FUNCTION (Fixes the error in columns.tsx) ---
 
@@ -120,5 +94,3 @@ export async function simulateSaleAction(leadId: string) {
 
   return result;
 }
-=======
->>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
