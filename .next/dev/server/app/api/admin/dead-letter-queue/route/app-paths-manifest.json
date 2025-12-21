@@ -1,0 +1,3 @@
+{
+  "/api/admin/dead-letter-queue/route": "app/api/admin/dead-letter-queue/route.js"
+}

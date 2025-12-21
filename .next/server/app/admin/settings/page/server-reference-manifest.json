@@ -1,0 +1,35 @@
+{
+  "node": {
+    "00104c1e859e67e008ede8afe9a80d4e5034fc7051": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/settings/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "action-browser"
+      },
+      "exportedName": "logoutBusiness",
+      "filename": "app/actions/auth-mock.ts"
+    },
+    "60f6b53dc1f99d738b025978dc4f32ec8da74ca13b": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/settings/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateBusinessProfile",
+          "filename": "app/admin/settings/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "action-browser"
+      },
+      "exportedName": "updateBusinessProfile",
+      "filename": "app/admin/settings/actions.ts"
+    }
+  },
+  "edge": {}
+}

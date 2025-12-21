@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 19, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Kuziv/Desktop/Desktop%20Folders/Client%20Projects/MVp/mvp-web-agency/app/admin/settings/profile/page.tsx"],"sourcesContent":["import { redirect } from \"next/navigation\";\r\n\r\nexport default function ProfilePage() {\r\n  // For this MVP, Profile and Settings are the same page\r\n  redirect(\"/admin/settings\");\r\n}\r\n"],"names":[],"mappings":";;;;AAAA;AAAA;;AAEe,SAAS;IACtB,uDAAuD;IACvD,IAAA,iMAAQ,EAAC;AACX","debugId":null}}]
+}
