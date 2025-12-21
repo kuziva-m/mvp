@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -33,3 +34,21 @@ export function createClient(request: NextRequest) {
 
   return { supabase, response };
 }
+=======
+// middleware.ts
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function middleware(request: NextRequest) {
+  // Pass through everything - Authentication is disabled for Admin Panel
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the _next/static, _next/image and favicon.ico
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
+};
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7

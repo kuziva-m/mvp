@@ -1,5 +1,6 @@
 globalThis.__BUILD_MANIFEST = {
   "pages": {
+<<<<<<< HEAD
     "/_app": [
       "static/chunks/node_modules_next_dist_compiled_next-devtools_index_5277ebc8.js",
       "static/chunks/node_modules_next_dist_compiled_166120c5._.js",
@@ -28,6 +29,9 @@ globalThis.__BUILD_MANIFEST = {
       "static/chunks/pages__error_2da965e7._.js",
       "static/chunks/turbopack-pages__error_18aa0e75._.js"
     ]
+=======
+    "/_app": []
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
   },
   "devFiles": [],
   "ampDevFiles": [],

@@ -14,6 +14,7 @@ module.exports = mod;
 "[project]/middleware.ts [middleware-edge] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+<<<<<<< HEAD
 __turbopack_context__.s([
     "createClient",
     ()=>createClient
@@ -53,6 +54,29 @@ function createClient(request) {
         response
     };
 }
+=======
+// middleware.ts
+__turbopack_context__.s([
+    "config",
+    ()=>config,
+    "middleware",
+    ()=>middleware
+]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$api$2f$server$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/next/dist/esm/api/server.js [middleware-edge] (ecmascript) <locals>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$exports$2f$index$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/esm/server/web/exports/index.js [middleware-edge] (ecmascript)");
+;
+async function middleware(request) {
+    // Pass through everything - Authentication is disabled for Admin Panel
+    return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$exports$2f$index$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].next();
+}
+const config = {
+    matcher: [
+        /*
+     * Match all request paths except for the _next/static, _next/image and favicon.ico
+     */ "/((?!_next/static|_next/image|favicon.ico).*)"
+    ]
+};
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
 }),
 ]);
 

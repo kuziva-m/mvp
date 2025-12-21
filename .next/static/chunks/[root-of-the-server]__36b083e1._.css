@@ -2173,6 +2173,13 @@
     background-color: var(--color-blue-200);
   }
 
+<<<<<<< HEAD
+=======
+  .bg-blue-400 {
+    background-color: var(--color-blue-400);
+  }
+
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
   .bg-blue-500 {
     background-color: var(--color-blue-500);
   }
@@ -2299,6 +2306,13 @@
     background-color: var(--color-orange-200);
   }
 
+<<<<<<< HEAD
+=======
+  .bg-orange-400 {
+    background-color: var(--color-orange-400);
+  }
+
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
   .bg-orange-500 {
     background-color: var(--color-orange-500);
   }
@@ -3490,6 +3504,15 @@
   }
 
   @media (hover: hover) {
+<<<<<<< HEAD
+=======
+    .hover\:bg-orange-100:hover {
+      background-color: var(--color-orange-100);
+    }
+  }
+
+  @media (hover: hover) {
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
     .hover\:bg-primary\/5:hover {
       background-color: var(--primary);
     }
@@ -3621,6 +3644,13 @@
     color: var(--accent-foreground);
   }
 
+<<<<<<< HEAD
+=======
+  .focus\:text-green-700:focus {
+    color: var(--color-green-700);
+  }
+
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
   .focus\:text-red-600:focus {
     color: var(--color-red-600);
   }

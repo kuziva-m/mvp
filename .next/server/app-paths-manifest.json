@@ -1,6 +1,7 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/admin/analytics/page": "app/admin/analytics/page.js",
+<<<<<<< HEAD
   "/admin/dashboard/page": "app/admin/dashboard/page.js",
   "/admin/lead-gen/page": "app/admin/lead-gen/page.js",
   "/admin/lead-magnet/page": "app/admin/lead-magnet/page.js",
@@ -10,4 +11,23 @@
   "/api/admin/lead-magnet/stats/route": "app/api/admin/lead-magnet/stats/route.js",
   "/api/admin/lead-magnet/submissions/route": "app/api/admin/lead-magnet/submissions/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js"
+=======
+  "/admin/customer-success/page": "app/admin/customer-success/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/email-templates/page": "app/admin/email-templates/page.js",
+  "/admin/financials/page": "app/admin/financials/page.js",
+  "/admin/lead-gen/page": "app/admin/lead-gen/page.js",
+  "/admin/lead-magnet/page": "app/admin/lead-magnet/page.js",
+  "/admin/leads/page": "app/admin/leads/page.js",
+  "/admin/qa/page": "app/admin/qa/page.js",
+  "/admin/subscriptions/page": "app/admin/subscriptions/page.js",
+  "/admin/support/page": "app/admin/support/page.js",
+  "/admin/websites/page": "app/admin/websites/page.js",
+  "/api/admin/analytics/route": "app/api/admin/analytics/route.js",
+  "/api/admin/financials/metrics/route": "app/api/admin/financials/metrics/route.js",
+  "/api/admin/lead-magnet/stats/route": "app/api/admin/lead-magnet/stats/route.js",
+  "/api/admin/lead-magnet/submissions/route": "app/api/admin/lead-magnet/submissions/route.js",
+  "/api/admin/subscriptions/route": "app/api/admin/subscriptions/route.js",
+  "/api/support/route": "app/api/support/route.js"
+>>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
 }
