@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-import { createClient } from "@/lib/supabase/server";
-
 export interface Template {
   id: string;
   name: string;
@@ -23,7 +20,14 @@ const AVAILABLE_TEMPLATES: Template[] = [
   {
     id: "service-pro-v1",
     name: "Service Pro",
-    industry: ["plumber", "electrician", "contractor", "cleaning", "trades"],
+    industry: [
+      "plumber",
+      "electrician",
+      "contractor",
+      "cleaning",
+      "trades",
+      "service",
+    ],
     qualityTier: "standard",
     description: "High-converting layout for service-based businesses.",
     componentPath: "templates/ServiceBusinessTemplate",
@@ -77,26 +81,4 @@ export async function selectTemplateForLead(lead: {
 
 export function getTemplateById(templateId: string): Template | undefined {
   return AVAILABLE_TEMPLATES.find((t) => t.id === templateId);
-=======
-export function selectTemplate(
-  lead: any,
-  quality: "basic" | "premium" = "basic"
-): string {
-  const industry = (lead.industry || "").toLowerCase().trim();
-
-  // Map industries to template IDs
-  if (industry.includes("restaurant") || industry.includes("food"))
-    return "restaurant-v1";
-  if (
-    industry.includes("service") ||
-    industry.includes("plumb") ||
-    industry.includes("electr")
-  )
-    return "service-business-v1";
-  if (industry.includes("shop") || industry.includes("retail"))
-    return "retail-v1";
-
-  // Default
-  return "modern-minimal-v1";
->>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
 }

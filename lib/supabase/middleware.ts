@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function updateSession(request: NextRequest) {
+export function createClient(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -21,9 +21,7 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value)
           );
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
@@ -32,6 +30,13 @@ export async function updateSession(request: NextRequest) {
       },
     }
   );
+
+  return { supabase, response };
+}
+
+export async function updateSession(request: NextRequest) {
+  // Use the helper above to initialize client + response
+  const { supabase, response } = createClient(request);
 
   // This refreshes the session if needed
   const {
