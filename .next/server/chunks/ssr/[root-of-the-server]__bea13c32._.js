@@ -70,7 +70,8 @@ const AVAILABLE_TEMPLATES = [
             "electrician",
             "contractor",
             "cleaning",
-            "trades"
+            "trades",
+            "service"
         ],
         qualityTier: "standard",
         description: "High-converting layout for service-based businesses.",
@@ -215,8 +216,8 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/supabase/server.ts [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$template$2d$selector$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/websites/template-selector.ts [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$ai$2d$generator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/websites/ai-generator.ts [app-rsc] (ecmascript)"); // Using our mock
-var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$leads$2f$scrapers$2f$scrapemaps$2d$client$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/leads/scrapers/scrapemaps-client.ts [app-rsc] (ecmascript)"); // Using our mock
+var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$ai$2d$generator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/websites/ai-generator.ts [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$leads$2f$scrapers$2f$scrapemaps$2d$client$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/leads/scrapers/scrapemaps-client.ts [app-rsc] (ecmascript)");
 ;
 ;
 ;
@@ -225,32 +226,26 @@ async function generateWebsiteForLead(leadId) {
     const supabase = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["createClient"])();
     try {
         console.log(`[Orchestrator] Starting generation for lead: ${leadId}`);
-        // 1. Fetch Lead Data
         const { data: lead, error: leadError } = await supabase.from("leads").select("*").eq("id", leadId).single();
         if (leadError || !lead) throw new Error(`Lead not found: ${leadError?.message}`);
-        // 2. Scrape Existing Data (if website exists or just generic business info)
+        // Mock Scrape
         const scrapedData = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$leads$2f$scrapers$2f$scrapemaps$2d$client$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["scrapeBusinessData"])(lead.website, lead.business_name);
-        // Update Lead with scraped logo/data if valuable
+        // Update Lead with scraped logo/data
         await supabase.from("leads").update({
             scraped_data: scrapedData,
             logo_url: scrapedData.logoUrl
         }).eq("id", leadId);
-        // 3. Select Template
+        // Select Template
         const template = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$template$2d$selector$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["selectTemplateForLead"])(lead);
-        console.log(`[Orchestrator] Selected template: ${template.id}`);
-        // 4. Generate AI Copy
-        // We combine manual lead info + scraped info for the prompt context
+        // Generate AI Copy
         const aiContext = {
             ...lead,
             ...scrapedData
         };
         const websiteContent = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$ai$2d$generator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateWebsiteCopy"])(lead.business_name, lead.industry, aiContext);
-        // 5. Create Website Record
-        // We create a subdomain based on business name (sanitized)
-        const subdomain = lead.business_name.toLowerCase().replace(/[^a-z0-9]/g, "-") // Replace non-alphanumeric with hyphens
-        .replace(/-+/g, "-") // Remove duplicate hyphens
-        .replace(/^-|-$/g, "") + // Remove leading/trailing hyphens
-        `-${leadId.slice(0, 4)}`; // Add simplified unique suffix
+        // Create Subdomain
+        const subdomain = lead.business_name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") + `-${leadId.slice(0, 4)}`;
+        // Save Website
         const { data: website, error: websiteError } = await supabase.from("websites").insert({
             lead_id: leadId,
             template_id: template.id,
@@ -259,14 +254,10 @@ async function generateWebsiteForLead(leadId) {
             subdomain: subdomain
         }).select().single();
         if (websiteError) throw new Error(`Failed to create website record: ${websiteError.message}`);
-        console.log(`[Orchestrator] Website created successfully: ${website.id}`);
-        // 6. Trigger "Deployment" (Mocking the build process)
-        // In a real system, this would call Vercel/Netlify API.
-        // Here we just update the status to 'published' after a short delay.
+        // Auto-publish for MVP
         await supabase.from("websites").update({
             status: "published"
-        }) // Auto-publishing for MVP
-        .eq("id", website.id);
+        }).eq("id", website.id);
         return {
             success: true,
             websiteId: website.id
@@ -289,7 +280,7 @@ async function generateWebsiteForLead(leadId) {
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/server-reference.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/supabase/server.ts [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$orchestrator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/websites/orchestrator.ts [app-rsc] (ecmascript)"); // FIXED IMPORT
+var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$orchestrator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/modules/websites/orchestrator.ts [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/cache.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/action-validate.js [app-rsc] (ecmascript)");
 ;
@@ -300,8 +291,6 @@ async function generateWebsitesAction() {
     const supabase = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["createClient"])();
     try {
         console.log("Starting batch website generation...");
-        // 1. Get leads that are 'pending' and don't have a website yet
-        // Limiting to 3 at a time to prevent timeout during testing
         const { data: leads, error } = await supabase.from("leads").select("id, business_name, industry").eq("status", "pending").limit(3);
         if (error) {
             console.error("Error fetching leads:", error);
@@ -318,27 +307,21 @@ async function generateWebsitesAction() {
             };
         }
         let successCount = 0;
-        // 2. Loop through leads and trigger the Orchestrator
         for (const lead of leads){
-            // Double check if a website already exists to avoid duplicates
+            // Check for existing website
             const { data: existing } = await supabase.from("websites").select("id").eq("lead_id", lead.id).single();
             if (existing) {
                 console.log(`Skipping ${lead.business_name}, website already exists.`);
                 continue;
             }
-            // Call the "Brain" to generate the site
             const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$modules$2f$websites$2f$orchestrator$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateWebsiteForLead"])(lead.id);
             if (result.success) {
                 successCount++;
-                // Update lead status so we don't pick it up again immediately
                 await supabase.from("leads").update({
                     status: "contacted"
                 }).eq("id", lead.id);
-            } else {
-                console.error(`Failed to generate for ${lead.business_name}:`, result.error);
             }
         }
-        // 3. Refresh the UI to show the new rows
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])("/admin/websites");
         return {
             success: true,

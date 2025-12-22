@@ -326,7 +326,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-<<<<<<< HEAD
 // Validate ../../app/public-sites/[subdomain]/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/public-sites/[subdomain]">> = Specific
@@ -336,8 +335,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-=======
->>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
 // Validate ../../app/select-business/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/select-business">> = Specific

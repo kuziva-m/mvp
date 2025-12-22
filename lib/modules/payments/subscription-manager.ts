@@ -52,3 +52,40 @@ export async function convertLeadToSubscription(leadId: string) {
     return { success: false, error: error.message };
   }
 }
+// ... keep existing imports and convertLeadToSubscription function ...
+
+export async function getAllSubscriptions(
+  params: { status?: string | null; search?: string | null } = {}
+) {
+  const supabase = await createClient();
+  let query = supabase
+    .from("subscriptions")
+    .select("*, leads(business_name, email, industry)")
+    .order("created_at", { ascending: false });
+
+  if (params.status && params.status !== "all") {
+    query = query.eq("status", params.status);
+  }
+
+  // If you want search functionality, you can add it here
+  // if (params.search) { ... }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function createSubscription(payload: any) {
+  const supabase = await createClient();
+
+  // Basic validation or transformation could go here
+
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .insert([payload])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

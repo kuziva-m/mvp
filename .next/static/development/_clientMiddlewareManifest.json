@@ -1,11 +1,6 @@
 [
   {
-<<<<<<< HEAD
-    "regexp": "^/.*$",
-    "originalSource": "/:path*"
-=======
-    "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico).*))(\\\\.json)?[\\/#\\?]?$",
-    "originalSource": "/((?!_next/static|_next/image|favicon.ico).*)"
->>>>>>> 63f6fc6e827b9dbfae1a45b27731fa4333fa51d7
+    "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!api\\/|_next\\/|_static\\/|_vercel|[\\w-]+\\.\\w+).*))(\\\\.json)?[\\/#\\?]?$",
+    "originalSource": "/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)"
   }
 ]
