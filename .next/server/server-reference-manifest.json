@@ -8,20 +8,14 @@
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
         },
-        "app/admin/lead-magnet/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/lead-magnet/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false,
-          "exportedName": "logoutBusiness",
-          "filename": "app/actions/auth-mock.ts"
-        },
         "app/admin/leads/page": {
           "moduleId": "[project]/.next-internal/server/app/admin/leads/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
         },
-        "app/admin/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+        "app/admin/websites/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/websites/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/websites/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
@@ -29,9 +23,8 @@
       },
       "layer": {
         "app/admin/lead-gen/page": "action-browser",
-        "app/admin/lead-magnet/page": "action-browser",
         "app/admin/leads/page": "action-browser",
-        "app/admin/page": "action-browser"
+        "app/admin/websites/page": "action-browser"
       },
       "filename": "app/actions/auth-mock.ts",
       "exportedName": "logoutBusiness"
@@ -80,6 +73,21 @@
       },
       "filename": "app/admin/leads/actions.ts",
       "exportedName": "updateLeadStatus"
+    },
+    "0030d1a09178c1e833a4029112a5d86a3e9603bce3": {
+      "workers": {
+        "app/admin/websites/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/websites/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/websites/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "generateWebsitesAction",
+          "filename": "app/admin/websites/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/websites/page": "action-browser"
+      },
+      "filename": "app/admin/websites/actions.ts",
+      "exportedName": "generateWebsitesAction"
     }
   },
   "edge": {},

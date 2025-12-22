@@ -135,47 +135,69 @@ function getTemplateById(templateId) {
 "[project]/lib/modules/websites/ai-generator.ts [app-rsc] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-/**
- * MOCK AI Generator
- * Simulates calling Anthropic to write website copy.
- */ __turbopack_context__.s([
+__turbopack_context__.s([
     "generateWebsiteCopy",
     ()=>generateWebsiteCopy
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$anthropic$2d$ai$2f$sdk$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/@anthropic-ai/sdk/index.mjs [app-rsc] (ecmascript) <locals>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$anthropic$2d$ai$2f$sdk$2f$client$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$export__Anthropic__as__default$3e$__ = __turbopack_context__.i("[project]/node_modules/@anthropic-ai/sdk/client.mjs [app-rsc] (ecmascript) <export Anthropic as default>");
+;
+// Initialize the client
+const anthropic = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$anthropic$2d$ai$2f$sdk$2f$client$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$export__Anthropic__as__default$3e$__["default"]({
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
 async function generateWebsiteCopy(businessName, industry, existingData) {
-    console.log(`[MOCK AI] Generating copy for ${businessName} (${industry})...`);
-    // Simulate API delay
-    await new Promise((resolve)=>setTimeout(resolve, 1500));
-    return {
-        hero: {
-            headline: `Welcome to ${businessName}`,
-            subheadline: `The best ${industry} services in the region. Quality you can trust.`,
-            ctaText: "Get a Quote"
-        },
-        about: {
-            title: "Our Story",
-            content: `${businessName} has been serving the community with dedication and excellence. We pride ourselves on customer satisfaction.`
-        },
-        services: [
-            {
-                title: "Service 1",
-                description: "High quality service description tailored to your needs."
+    console.log(`[AI] Generating copy for ${businessName}...`);
+    // 1. Construct the prompt
+    const systemPrompt = `You are a professional copywriter for small businesses. 
+  Write a high-converting website copy for a ${industry} business named "${businessName}".
+  Return ONLY valid JSON. Do not include any conversational text.`;
+    const userMessage = `
+    Based on this existing data: ${JSON.stringify(existingData)}, 
+    generate the following sections:
+    1. hero_headline (Catchy, under 10 words)
+    2. hero_subheadline (Benefit-driven, under 20 words)
+    3. about_us (Professional, under 50 words)
+    4. services (Array of 3 services with 'title' and 'description')
+    
+    Format response as JSON:
+    {
+      "hero": { "headline": "...", "subheadline": "..." },
+      "about": "...",
+      "services": [ { "title": "...", "description": "..." } ]
+    }
+  `;
+    try {
+        // 2. Call Anthropic API
+        const msg = await anthropic.messages.create({
+            model: "claude-3-haiku-20240307",
+            max_tokens: 1000,
+            system: systemPrompt,
+            messages: [
+                {
+                    role: "user",
+                    content: userMessage
+                }
+            ]
+        });
+        // 3. Parse the response
+        const textContent = msg.content[0].type === "text" ? msg.content[0].text : "";
+        // Attempt to clean JSON if Claude added extra text (simple cleanup)
+        const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+        const cleanJson = jsonMatch ? jsonMatch[0] : textContent;
+        return JSON.parse(cleanJson);
+    } catch (error) {
+        console.error("Anthropic API Error:", error);
+        // Fallback if API fails so app doesn't crash
+        return {
+            hero: {
+                headline: `Welcome to ${businessName}`,
+                subheadline: "We serve the best."
             },
-            {
-                title: "Service 2",
-                description: "Another premium offering that our customers love."
-            },
-            {
-                title: "Service 3",
-                description: "Comprehensive solutions for your specific requirements."
-            }
-        ],
-        contact: {
-            email: existingData.email || `contact@${businessName.replace(/\s+/g, "").toLowerCase()}.com`,
-            phone: existingData.phone || "555-0123",
-            address: "123 Main St, Sydney NSW"
-        }
-    };
+            about: "Error generating copy.",
+            services: []
+        };
+    }
 }
 }),
 "[project]/lib/modules/leads/scrapers/scrapemaps-client.ts [app-rsc] (ecmascript)", ((__turbopack_context__) => {
