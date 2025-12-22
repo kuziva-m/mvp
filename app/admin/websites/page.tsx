@@ -1,107 +1,144 @@
+import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { query } from "@/lib/db";
-import { GenerateButton } from "./generate-button"; // ✅ Import the new button
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
 export default async function WebsitesPage() {
-  // Fetch existing websites
-  const { data: websites } = await query("websites");
-  const safeWebsites = websites || [];
+  const supabase = await createClient();
+
+  const { data: sites, error } = await supabase
+    .from("sites")
+    .select(
+      `
+      *,
+      leads (
+        business_name,
+        industry,
+        email
+      )
+    `
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return (
+      <div className="p-8 text-red-500">
+        Error loading sites: {error.message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-8">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Website Generation
+            Generated Websites
           </h1>
-          <p className="text-muted-foreground">
-            Manage AI-generated sites and QA reports.
+          <p className="text-muted-foreground mt-2">
+            Manage your inventory of AI-generated demos.
           </p>
         </div>
-        {/* ✅ Replaced static button with functional one */}
-        <GenerateButton />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {safeWebsites.map((site: any) => (
-          <Card key={site.id} className="border shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium capitalize">
-                {site.subdomain?.replace(/-/g, " ") || "Untitled"}
-              </CardTitle>
-              <StatusBadge status={site.status} />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  Template:{" "}
-                  <span className="font-medium text-foreground">
-                    {site.template_id}
-                  </span>
-                </div>
-
-                {site.status !== "draft" && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span>QA Score:</span>
-                    <span
-                      className={`font-bold ${
-                        site.qa_score > 80 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {site.qa_score}/100
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Eye className="mr-2 h-4 w-4" /> Preview
-                  </Button>
-                  {site.status === "flagged" && (
-                    <Button variant="destructive" size="sm" className="w-full">
-                      Fix Issues
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {safeWebsites.length === 0 && (
-          <div className="col-span-full p-12 text-center border-2 border-dashed rounded-xl bg-gray-50/50">
-            <p className="text-muted-foreground">
-              No websites generated yet. <br />
-              Click <b>"Bulk Generate"</b> to create sites for your existing
-              leads.
+      {!sites || sites.length === 0 ? (
+        <Card className="bg-slate-50 border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <h3 className="text-lg font-semibold text-slate-700">
+              No Websites Yet
+            </h3>
+            <p className="text-slate-500 max-w-sm mt-2">
+              Go to the Leads tab, pick a business, and click "Generate Website"
+              to start your factory.
             </p>
-          </div>
-        )}
-      </div>
+            <Link href="/admin/leads">
+              <Button className="mt-6" variant="outline">
+                Go to Leads
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {sites.map((site: any) => {
+            const content = site.content_data || site.content || {};
+            const heroHeadline =
+              content.hero?.headline || content.heroHeadline || "No Headline";
+
+            return (
+              <Card
+                key={site.id}
+                className="overflow-hidden hover:shadow-md transition-shadow"
+              >
+                {/* Header with Status */}
+                <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500" />
+
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start w-full gap-3">
+                    {/* TEXT CONTAINER: Allow wrapping */}
+                    <div className="min-w-0 flex-1">
+                      <CardTitle
+                        className="text-lg break-words pr-1"
+                        title={site.leads?.business_name}
+                      >
+                        {site.leads?.business_name || "Unknown Business"}
+                      </CardTitle>
+                      <p
+                        className="text-xs text-muted-foreground mt-1 truncate"
+                        title={site.leads?.industry}
+                      >
+                        {site.leads?.industry}
+                      </p>
+                    </div>
+
+                    {/* BADGE: Prevent wrapping and cutting off */}
+                    <Badge
+                      variant={site.is_published ? "default" : "secondary"}
+                      className="shrink-0 whitespace-nowrap"
+                    >
+                      {site.style}
+                    </Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  {/* Preview of the AI Copy */}
+                  <div className="p-3 bg-slate-50 rounded-md text-sm text-slate-600 h-24 overflow-hidden border">
+                    <span className="font-semibold text-slate-900 block mb-1">
+                      Hero:
+                    </span>
+                    "{heroHeadline}"
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <Link
+                      href={`/preview/${site.id}`}
+                      className="w-full"
+                      target="_blank"
+                    >
+                      <Button className="w-full gap-2" variant="outline">
+                        <ExternalLink className="h-4 w-4" />
+                        Preview Site
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <div className="text-xs text-center text-slate-400">
+                    Generated {formatDistanceToNow(new Date(site.created_at))}{" "}
+                    ago
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === "generated")
-    return (
-      <Badge className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
-        <CheckCircle className="w-3 h-3 mr-1" /> Ready
-      </Badge>
-    );
-  if (status === "flagged")
-    return (
-      <Badge
-        variant="destructive"
-        className="bg-red-50 text-red-700 hover:bg-red-100 border-red-200"
-      >
-        <AlertTriangle className="w-3 h-3 mr-1" /> QA Issues
-      </Badge>
-    );
-  return <Badge variant="secondary">Processing</Badge>;
 }

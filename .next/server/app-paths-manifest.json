@@ -1,4 +1,10 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/websites/page": "app/admin/websites/page.js"
+  "/admin/email-templates/new/page": "app/admin/email-templates/new/page.js",
+  "/admin/email-templates/page": "app/admin/email-templates/page.js",
+  "/admin/leads/[id]/page": "app/admin/leads/[id]/page.js",
+  "/admin/leads/page": "app/admin/leads/page.js",
+  "/admin/websites/page": "app/admin/websites/page.js",
+  "/api/email-templates/route": "app/api/email-templates/route.js",
+  "/api/leads/[id]/send-email/route": "app/api/leads/[id]/send-email/route.js"
 }

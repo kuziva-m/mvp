@@ -1,137 +1,131 @@
-import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ExternalLink, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, CheckCircle2, Zap, BarChart3, Globe } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
-export default async function WebsitesPage() {
-  const supabase = await createClient();
-
-  // 1. Fetch Sites with their associated Lead info
-  // We use the foreign key relation 'leads' to get the business name
-  const { data: sites, error } = await supabase
-    .from("sites")
-    .select(
-      `
-      *,
-      leads (
-        business_name,
-        industry,
-        email
-      )
-    `
-    )
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return (
-      <div className="p-8 text-red-500">
-        Error loading sites: {error.message}
-      </div>
-    );
-  }
-
+export default function Home() {
   return (
-    <div className="space-y-6 p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Generated Websites
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your inventory of AI-generated demos.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="relative py-20 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col items-center text-center space-y-8">
+          <Badge variant="secondary" className="px-4 py-2 text-sm">
+            🚀 MVP Admin Panel V1.0
+          </Badge>
 
-      {!sites || sites.length === 0 ? (
-        <Card className="bg-slate-50 border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <h3 className="text-lg font-semibold text-slate-700">
-              No Websites Yet
-            </h3>
-            <p className="text-slate-500 max-w-sm mt-2">
-              Go to the Leads tab, pick a business, and click "Generate Website"
-              to start your factory.
-            </p>
-            <Link href="/admin/leads">
-              <Button className="mt-6" variant="outline">
-                Go to Leads
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-3xl">
+            Supercharge Your Agency <br />
+            <span className="text-primary">Operations</span>
+          </h1>
+
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+            All-in-one dashboard for lead generation, website management,
+            analytics, and customer success.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <Link href="/select-business">
+              <Button size="lg" className="gap-2 text-lg h-12 px-8">
+                Enter Dashboard
+                <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sites.map((site: any) => {
-            // Handle content_data vs content column safely
-            const content = site.content_data || site.content || {};
-            const heroHeadline =
-              content.hero?.headline || content.heroHeadline || "No Headline";
-
-            return (
-              <Card
-                key={site.id}
-                className="overflow-hidden hover:shadow-md transition-shadow"
+            <Link href="/admin/documentation">
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 text-lg h-12 px-8"
               >
-                {/* Header with Status */}
-                <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500" />
-
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg truncate pr-2">
-                        {site.leads?.business_name || "Unknown Business"}
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {site.leads?.industry}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={site.is_published ? "default" : "secondary"}
-                    >
-                      {site.style}
-                    </Badge>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {/* Preview of the AI Copy */}
-                  <div className="p-3 bg-slate-50 rounded-md text-sm text-slate-600 h-24 overflow-hidden border">
-                    <span className="font-semibold text-slate-900 block mb-1">
-                      Hero:
-                    </span>
-                    "{heroHeadline}"
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 pt-2">
-                    <Link
-                      href={`/preview/${site.id}`}
-                      className="w-full"
-                      target="_blank"
-                    >
-                      <Button className="w-full gap-2" variant="outline">
-                        <ExternalLink className="h-4 w-4" />
-                        Preview Site
-                      </Button>
-                    </Link>
-                  </div>
-
-                  <div className="text-xs text-center text-slate-400">
-                    Generated {formatDistanceToNow(new Date(site.created_at))}{" "}
-                    ago
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                View Documentation
+              </Button>
+            </Link>
+          </div>
         </div>
-      )}
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-20 bg-muted/50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Zap className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle>Lead Generation</CardTitle>
+                <CardDescription>
+                  Automated scraping and enrichment tools
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Google Maps Scraping
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Email Verification
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Globe className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle>Website Builder</CardTitle>
+                <CardDescription>AI-powered site generation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    One-Click Deployment
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Automated QA Testing
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle>Analytics</CardTitle>
+                <CardDescription>
+                  Real-time performance tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Revenue Metrics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Customer Health Scores
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
