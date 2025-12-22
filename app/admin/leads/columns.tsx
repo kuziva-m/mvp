@@ -3,94 +3,81 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Mail, MousePointer2, ExternalLink } from "lucide-react";
-import { simulateSaleAction } from "./actions"; // Ensure this action exists from previous step
+import { ArrowUpDown, ExternalLink, MoreHorizontal } from "lucide-react";
+import Link from "next/link";
 
+// Define the shape of our Lead data
 export type Lead = {
   id: string;
   business_name: string;
   email: string;
   status: string;
-  source: string;
-  email_opened_at: string | null;
-  email_clicked_at: string | null;
+  industry: string;
   created_at: string;
+  website_url?: string;
 };
 
 export const columns: ColumnDef<Lead>[] = [
   {
     accessorKey: "business_name",
-    header: "Business",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Business Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      // THIS LINK IS CRITICAL - It lets you navigate to the detail page
+      return (
+        <Link
+          href={`/admin/leads/${row.original.id}`}
+          className="font-medium hover:underline text-blue-600"
+        >
+          {row.getValue("business_name")}
+        </Link>
+      );
+    },
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
-      // Color coding status
-      const color =
-        status === "subscribed"
-          ? "bg-green-500"
-          : status === "contacted"
-          ? "bg-blue-500"
-          : status === "churned"
-          ? "bg-red-500"
-          : "bg-gray-500";
       return (
-        <Badge className={`${color} text-white hover:${color}`}>{status}</Badge>
+        <Badge variant={status === "new" ? "default" : "secondary"}>
+          {status}
+        </Badge>
       );
     },
   },
   {
-    accessorKey: "source",
-    header: "Source",
-    cell: ({ row }) => {
-      const source = (row.getValue("source") as string) || "Manual";
-      return <Badge variant="outline">{source}</Badge>;
-    },
+    accessorKey: "industry",
+    header: "Industry",
   },
   {
-    id: "engagement",
-    header: "Engagement",
-    cell: ({ row }) => {
-      const opened = !!row.original.email_opened_at;
-      const clicked = !!row.original.email_clicked_at;
-
-      return (
-        <div className="flex gap-3 text-gray-500">
-          <div
-            title={opened ? "Email Opened" : "Not Opened"}
-            className={opened ? "text-blue-600" : "opacity-30"}
-          >
-            <Mail className="h-4 w-4" />
-          </div>
-          <div
-            title={clicked ? "Link Clicked" : "Not Clicked"}
-            className={clicked ? "text-green-600" : "opacity-30"}
-          >
-            <MousePointer2 className="h-4 w-4" />
-          </div>
-        </div>
-      );
-    },
+    accessorKey: "email",
+    header: "Email",
   },
   {
-    id: "actions",
+    accessorKey: "website_url",
+    header: "Website",
     cell: ({ row }) => {
+      const url = row.getValue("website_url") as string;
+      if (!url) return <span className="text-muted-foreground">-</span>;
       return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs"
-          onClick={async () => {
-            // Logic to simulate a sale for testing without API
-            if (confirm("Simulate Stripe Payment for this lead?")) {
-              await simulateSaleAction(row.original.id);
-            }
-          }}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center text-muted-foreground hover:text-foreground"
         >
-          Simulate Sale $$$
-        </Button>
+          View <ExternalLink className="ml-1 h-3 w-3" />
+        </a>
       );
     },
   },

@@ -1,54 +1,67 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Loader2, Wand2 } from 'lucide-react'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Wand2, Loader2, Play } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner"; // If you don't have sonner, delete this line
 
 interface GenerateWebsiteButtonProps {
-  leadId: string
+  leadId: string;
+  currentStatus: string;
 }
 
-export default function GenerateWebsiteButton({ leadId }: GenerateWebsiteButtonProps) {
-  const [isGenerating, setIsGenerating] = useState(false)
-  const router = useRouter()
+export function GenerateWebsiteButton({
+  leadId,
+  currentStatus,
+}: GenerateWebsiteButtonProps) {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleGenerate = async () => {
-    setIsGenerating(true)
-
     try {
-      const response = await fetch(`/api/leads/${leadId}/generate`, {
-        method: 'POST',
-      })
+      setLoading(true);
+      console.log("--> CLICKED GENERATE for Lead:", leadId);
 
-      const data = await response.json()
+      // 1. Call the API
+      const response = await fetch(`/api/leads/${leadId}/generate`, {
+        method: "POST",
+      });
+
+      console.log("--> API RESPONSE STATUS:", response.status);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Generation failed')
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate website");
       }
 
-      alert(`Website Generated Successfully!\nUsed ${data.tokensUsed} tokens ($${data.costUSD})\n\nClick OK to reload the page.`)
+      const data = await response.json();
+      console.log("--> GENERATION SUCCESS:", data);
 
-      // Refresh the page to show the new site
-      router.refresh()
-    } catch (error) {
-      console.error('Generation error:', error)
-      alert(`Generation Failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      // 2. Success Feedback
+      // toast.success("Website generated successfully!"); // Uncomment if using sonner
+      alert("Website Generated! Check your terminal for AI logs.");
+
+      // 3. Refresh the page to show the new status/link
+      router.refresh();
+    } catch (error: any) {
+      console.error("--> GENERATION ERROR:", error);
+      alert(`Error: ${error.message}`);
     } finally {
-      setIsGenerating(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Button
-      size="lg"
       onClick={handleGenerate}
-      disabled={isGenerating}
+      disabled={loading}
+      className="bg-blue-600 hover:bg-blue-700 text-white"
     >
-      {isGenerating ? (
+      {loading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating Website...
+          Generating...
         </>
       ) : (
         <>
@@ -57,5 +70,5 @@ export default function GenerateWebsiteButton({ leadId }: GenerateWebsiteButtonP
         </>
       )}
     </Button>
-  )
+  );
 }

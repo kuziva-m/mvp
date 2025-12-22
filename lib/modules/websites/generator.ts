@@ -1,167 +1,186 @@
-import { getById, insert, update } from '@/lib/db'
-import type { Lead, Site, Generation } from '@/types'
-import { scrapeWebsite } from './scraper'
-import { generateWebsiteCopy } from './ai-generator'
-import { logAIUsage } from '@/lib/modules/financial/expense-tracker'
+import { getById, insert, update } from "@/lib/db";
+import type { Lead, Site, Generation } from "@/types";
+import { scrapeWebsite } from "./scraper";
+import { generateWebsiteCopy } from "./ai-generator";
+import { logAIUsage } from "@/lib/modules/financial/expense-tracker";
+import { qaQueue } from "@/lib/queues"; // Uses our safe Mock Queue
 
 interface GenerationResult {
-  success: boolean
-  siteId?: string
-  previewUrl?: string
-  tokensUsed?: number
-  costUSD?: number
-  error?: string
+  success: boolean;
+  siteId?: string;
+  previewUrl?: string;
+  tokensUsed?: number;
+  costUSD?: number;
+  error?: string;
 }
 
 /**
  * Main orchestration function for website generation
  * Handles the complete workflow from lead data to generated site
  */
-export async function generateWebsite(leadId: string): Promise<GenerationResult> {
+export async function generateWebsite(
+  leadId: string
+): Promise<GenerationResult> {
+  console.log(`[Generator] Starting process for lead: ${leadId}`);
+
   try {
     // 1. Fetch lead from database
-    const { data: lead, error: leadError } = await getById<Lead>('leads', leadId)
+    const { data: lead, error: leadError } = await getById<Lead>(
+      "leads",
+      leadId
+    );
 
     if (leadError || !lead) {
       return {
         success: false,
-        error: 'Lead not found',
-      }
+        error: "Lead not found",
+      };
     }
 
-    // 2. Optionally scrape website if URL exists
-    let scrapedData = null
+    // 2. Optionally scrape website if URL exists (Mock/Partial implementation for MVP)
+    let scrapedData: any = null;
     if (lead.website) {
       try {
-        console.log(`Scraping website: ${lead.website}`)
-        scrapedData = await scrapeWebsite(lead.website)
+        console.log(`Scraping website: ${lead.website}`);
+        scrapedData = await scrapeWebsite(lead.website);
 
         if (scrapedData) {
-          // Update lead with scraped data
-          await update('leads', leadId, {
+          await update("leads", leadId, {
             scraped_data: scrapedData,
-            status: 'scraped'
-          })
-          console.log('Website scraped successfully')
+            status: "scraped",
+          });
+          console.log("Website scraped successfully");
         }
       } catch (scrapeError) {
-        console.error('Scraping failed, continuing without scraped data:', scrapeError)
-        // Continue without scraped data - not a fatal error
+        console.warn(
+          "Scraping failed, continuing without scraped data:",
+          scrapeError
+        );
       }
     }
 
     // 3. Determine template based on industry
-    const template = getTemplateForIndustry(lead.industry)
-    console.log(`Selected template: ${template} for industry: ${lead.industry}`)
+    const template = getTemplateForIndustry(lead.industry);
+    console.log(
+      `Selected template: ${template} for industry: ${lead.industry}`
+    );
 
     // 4. Generate website copy using AI
-    console.log('Generating website copy with AI...')
-    const generatedCopy = await generateWebsiteCopy({
-      businessName: lead.business_name,
-      industry: lead.industry,
-      location: undefined,
-      scrapedData: scrapedData || undefined,
-    })
+    console.log("Generating website copy with AI...");
+
+    const generatedCopy = await generateWebsiteCopy(
+      lead.business_name,
+      lead.industry,
+      scrapedData || {}
+    );
 
     // 5. Prepare content data for the site
+    // CRITICAL FIX: Structure this exactly how the Template components expect it (Nested Hero)
     const contentData = {
       businessName: lead.business_name,
       industry: lead.industry,
-      heroHeadline: generatedCopy.heroHeadline,
-      heroSubheadline: generatedCopy.heroSubheadline,
-      services: generatedCopy.services,
-      about: generatedCopy.about,
-      cta: generatedCopy.cta,
-      colors: scrapedData?.colors ? {
-        primary: scrapedData.colors.primary || undefined,
-        secondary: scrapedData.colors.secondary || undefined,
-        text: scrapedData.colors.text || undefined,
-      } : undefined,
+
+      // FIX: Nest hero data so 'content.hero.headline' works in templates
+      hero: {
+        headline:
+          generatedCopy.heroHeadline ||
+          generatedCopy.hero?.headline ||
+          "Welcome",
+        subheadline:
+          generatedCopy.heroSubheadline ||
+          generatedCopy.hero?.subheadline ||
+          "We provide excellent service.",
+      },
+
+      services: generatedCopy.services || [],
+      about: generatedCopy.about || "",
+      cta: generatedCopy.cta || { title: "Contact Us", link: "/contact" },
+
+      // Handle colors if scraping worked
+      colors: scrapedData?.colors
+        ? {
+            primary: scrapedData.colors.primary || undefined,
+            secondary: scrapedData.colors.secondary || undefined,
+            text: scrapedData.colors.text || undefined,
+          }
+        : undefined,
+
       logoUrl: scrapedData?.logoUrl || undefined,
-    }
+
+      contact: {
+        email: lead.email,
+        phone: lead.phone,
+      },
+    };
 
     // 6. Save to sites table
-    const siteId = crypto.randomUUID()
-    const previewUrl = `/preview/${siteId}`
+    const siteId = crypto.randomUUID();
+    const previewUrl = `/preview/${siteId}`;
 
-    const { error: siteError } = await insert<Partial<Site>>('sites', {
+    const { error: siteError } = await insert<Partial<Site>>("sites", {
       id: siteId,
       lead_id: leadId,
-      framer_project_id: null,
       preview_url: previewUrl,
       published_url: null,
       custom_domain: null,
       style: template,
       is_published: false,
-      content_data: contentData,
-    })
+      content_data: contentData, // Correct column name
+    });
 
     if (siteError) {
-      console.error('Failed to save site:', siteError)
+      console.error("Failed to save site:", siteError);
       return {
         success: false,
-        error: 'Failed to save generated site',
-      }
+        error: "Failed to save generated site: " + siteError.message,
+      };
     }
 
-    console.log('Site saved successfully')
+    console.log("Site saved successfully");
 
-    // 7. Save to generations table
-    const { error: generationError } = await insert<Partial<Generation>>('generations', {
+    // 7. Save to generations table (Logs)
+    await insert<Partial<Generation>>("generations", {
       id: crypto.randomUUID(),
       lead_id: leadId,
       site_id: siteId,
       prompt_data: {
         businessName: lead.business_name,
         industry: lead.industry,
-        scrapedData: scrapedData ? {
-          logoUrl: scrapedData.logoUrl,
-          colors: scrapedData.colors,
-          headings: scrapedData.headings,
-        } : null,
       },
-      ai_output: JSON.stringify(generatedCopy),
-      tokens_used: generatedCopy.tokensUsed,
-      cost_usd: generatedCopy.costUSD,
-    })
+      ai_output: generatedCopy,
+      tokens_used: generatedCopy.tokensUsed || 0,
+      cost_usd: generatedCopy.costUSD || 0,
+    });
 
-    if (generationError) {
-      console.error('Failed to save generation log:', generationError)
-      // Not a fatal error - site was created successfully
-    }
-
-    // 8. Log AI usage expense
+    // 8. Log AI usage expense (Optional)
     if (generatedCopy.tokensUsed && generatedCopy.costUSD) {
       try {
-        await logAIUsage(leadId, siteId, generatedCopy.tokensUsed, generatedCopy.costUSD)
+        await logAIUsage(
+          leadId,
+          siteId,
+          generatedCopy.tokensUsed,
+          generatedCopy.costUSD
+        );
       } catch (expenseError) {
-        console.error('Failed to log AI expense (non-fatal):', expenseError)
+        console.error("Failed to log AI expense (non-fatal):", expenseError);
       }
     }
 
     // 9. Update lead status to 'generated'
-    await update('leads', leadId, { status: 'generated' })
-    console.log('Lead status updated to generated')
+    await update("leads", leadId, {
+      status: "generated",
+      copy_analysis: generatedCopy,
+    });
+    console.log("Lead status updated to generated");
 
-    // 10. Queue QA review
+    // 10. Queue QA review (Mock Queue - Safe for local)
     try {
-      const { Queue } = await import('bullmq')
-      const { default: Redis } = await import('ioredis')
-
-      const connection = new Redis(process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING || 'redis://localhost:6379', {
-        maxRetriesPerRequest: null,
-      })
-
-      const qaQueue = new Queue('qa-review', { connection })
-
-      await qaQueue.add('review', {
+      await qaQueue.add("review", {
         siteId: siteId,
-      })
-
-      console.log(`✅ QA queued for site: ${siteId}`)
+      });
+      console.log(`✅ QA queued for site: ${siteId}`);
     } catch (qaError) {
-      console.error('Failed to queue QA (non-fatal):', qaError)
-      // Non-fatal - site was still created successfully
+      console.error("Failed to queue QA (non-fatal):", qaError);
     }
 
     // 11. Return success result
@@ -171,13 +190,13 @@ export async function generateWebsite(leadId: string): Promise<GenerationResult>
       previewUrl,
       tokensUsed: generatedCopy.tokensUsed,
       costUSD: generatedCopy.costUSD,
-    }
-  } catch (error) {
-    console.error('Website generation error:', error)
+    };
+  } catch (error: any) {
+    console.error("Website generation error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    }
+      error: error.message || "Unknown error occurred",
+    };
   }
 }
 
@@ -185,55 +204,57 @@ export async function generateWebsite(leadId: string): Promise<GenerationResult>
  * Maps industry to appropriate template
  */
 function getTemplateForIndustry(industry: string): string {
-  const industryLower = industry.toLowerCase()
+  const industryLower = (industry || "").toLowerCase();
 
   // Service businesses
   if (
-    industryLower.includes('plumb') ||
-    industryLower.includes('electric') ||
-    industryLower.includes('hvac') ||
-    industryLower.includes('construct') ||
-    industryLower.includes('repair') ||
-    industryLower.includes('handyman')
+    industryLower.includes("plumb") ||
+    industryLower.includes("electric") ||
+    industryLower.includes("hvac") ||
+    industryLower.includes("construct") ||
+    industryLower.includes("repair") ||
+    industryLower.includes("handyman")
   ) {
-    return 'service'
+    return "service";
   }
 
   // Restaurants & Food
   if (
-    industryLower.includes('restaurant') ||
-    industryLower.includes('cafe') ||
-    industryLower.includes('coffee') ||
-    industryLower.includes('food') ||
-    industryLower.includes('bakery') ||
-    industryLower.includes('catering')
+    industryLower.includes("restaurant") ||
+    industryLower.includes("cafe") ||
+    industryLower.includes("coffee") ||
+    industryLower.includes("food") ||
+    industryLower.includes("bakery") ||
+    industryLower.includes("catering") ||
+    industryLower.includes("pizza")
   ) {
-    return 'restaurant'
+    return "restaurant";
   }
 
   // Retail
   if (
-    industryLower.includes('retail') ||
-    industryLower.includes('store') ||
-    industryLower.includes('shop') ||
-    industryLower.includes('boutique') ||
-    industryLower.includes('clothing')
+    industryLower.includes("retail") ||
+    industryLower.includes("store") ||
+    industryLower.includes("shop") ||
+    industryLower.includes("boutique") ||
+    industryLower.includes("clothing")
   ) {
-    return 'retail'
+    return "retail";
   }
 
   // Professional Services
   if (
-    industryLower.includes('law') ||
-    industryLower.includes('legal') ||
-    industryLower.includes('account') ||
-    industryLower.includes('consult') ||
-    industryLower.includes('financial') ||
-    industryLower.includes('insurance')
+    industryLower.includes("law") ||
+    industryLower.includes("legal") ||
+    industryLower.includes("account") ||
+    industryLower.includes("consult") ||
+    industryLower.includes("financial") ||
+    industryLower.includes("insurance") ||
+    industryLower.includes("agency")
   ) {
-    return 'professional'
+    return "professional";
   }
 
   // Default to modern minimal
-  return 'modern'
+  return "modern";
 }

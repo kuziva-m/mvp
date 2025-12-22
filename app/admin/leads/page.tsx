@@ -54,6 +54,7 @@ import { createLead, scrapeWebsite, updateLeadStatus } from "./actions";
 import { toast } from "sonner";
 import { createBrowserClient } from "@supabase/ssr";
 import { Lead } from "@/types";
+import Link from "next/link";
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -366,9 +367,15 @@ export default function LeadsPage() {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="font-medium">
+                                  {/* --- CHANGE START: Added Link Wrapper --- */}
+                                  <Link
+                                    href={`/admin/leads/${lead.id}`}
+                                    className="font-medium hover:underline text-blue-600 block"
+                                  >
                                     {lead.business_name}
-                                  </div>
+                                  </Link>
+                                  {/* --- CHANGE END --- */}
+
                                   <a
                                     href={lead.website}
                                     target="_blank"

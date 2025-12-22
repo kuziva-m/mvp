@@ -1,7 +1,4 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/lead-gen/page": "app/admin/lead-gen/page.js",
-  "/admin/leads/page": "app/admin/leads/page.js",
-  "/admin/websites/page": "app/admin/websites/page.js",
-  "/api/admin/generate-test-leads/route": "app/api/admin/generate-test-leads/route.js"
+  "/admin/websites/page": "app/admin/websites/page.js"
 }
