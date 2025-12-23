@@ -1,47 +1,43 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, ArrowRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, ExternalLink, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { deleteLead } from "./actions"; // Import the action we just made
+import { toast } from "sonner";
 
-// Define the shape of our Lead data
+// Define the shape of your data
 export type Lead = {
   id: string;
   business_name: string;
-  email: string;
-  status: string;
   industry: string;
+  status: string;
+  email: string;
+  website: string | null;
   created_at: string;
-  website_url?: string;
 };
 
 export const columns: ColumnDef<Lead>[] = [
   {
     accessorKey: "business_name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Business Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      // THIS LINK IS CRITICAL - It lets you navigate to the detail page
-      return (
-        <Link
-          href={`/admin/leads/${row.original.id}`}
-          className="font-medium hover:underline text-blue-600"
-        >
-          {row.getValue("business_name")}
-        </Link>
-      );
-    },
+    header: "Business Name",
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("business_name")}</div>
+    ),
+  },
+  {
+    accessorKey: "industry",
+    header: "Industry",
   },
   {
     accessorKey: "status",
@@ -49,35 +45,62 @@ export const columns: ColumnDef<Lead>[] = [
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
-        <Badge variant={status === "new" ? "default" : "secondary"}>
+        <Badge variant={status === "generated" ? "default" : "secondary"}>
           {status}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "industry",
-    header: "Industry",
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
-    accessorKey: "website_url",
-    header: "Website",
+    id: "actions",
     cell: ({ row }) => {
-      const url = row.getValue("website_url") as string;
-      if (!url) return <span className="text-muted-foreground">-</span>;
+      const lead = row.original;
+
+      const handleDelete = async () => {
+        const confirmDelete = window.confirm(
+          `Are you sure you want to delete ${lead.business_name}?`
+        );
+        if (!confirmDelete) return;
+
+        const result = await deleteLead(lead.id);
+        if (result.success) {
+          toast.success("Lead deleted successfully");
+        } else {
+          toast.error("Failed to delete lead: " + result.error);
+        }
+      };
+
       return (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center text-muted-foreground hover:text-foreground"
-        >
-          View <ExternalLink className="ml-1 h-3 w-3" />
-        </a>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(lead.id)}
+            >
+              Copy Lead ID
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+
+            <Link href={`/admin/leads/${lead.id}`}>
+              <DropdownMenuItem className="cursor-pointer">
+                View Details <ArrowRight className="w-4 h-4 ml-auto" />
+              </DropdownMenuItem>
+            </Link>
+
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-red-600 focus:text-red-600 cursor-pointer"
+            >
+              Delete Lead <Trash2 className="w-4 h-4 ml-auto" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },

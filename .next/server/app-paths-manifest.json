@@ -1,10 +1,17 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/email-templates/new/page": "app/admin/email-templates/new/page.js",
-  "/admin/email-templates/page": "app/admin/email-templates/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/lead-gen/page": "app/admin/lead-gen/page.js",
+  "/admin/lead-magnet/page": "app/admin/lead-magnet/page.js",
   "/admin/leads/[id]/page": "app/admin/leads/[id]/page.js",
   "/admin/leads/page": "app/admin/leads/page.js",
-  "/admin/websites/page": "app/admin/websites/page.js",
-  "/api/email-templates/route": "app/api/email-templates/route.js",
-  "/api/leads/[id]/send-email/route": "app/api/leads/[id]/send-email/route.js"
+  "/admin/page": "app/admin/page.js",
+  "/api/admin/generate-test-leads/route": "app/api/admin/generate-test-leads/route.js",
+  "/api/admin/lead-magnet/stats/route": "app/api/admin/lead-magnet/stats/route.js",
+  "/api/admin/lead-magnet/submissions/route": "app/api/admin/lead-magnet/submissions/route.js",
+  "/checkout/[siteId]/page": "app/checkout/[siteId]/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/preview/[siteId]/page": "app/preview/[siteId]/page.js"
 }

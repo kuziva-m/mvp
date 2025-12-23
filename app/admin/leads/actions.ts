@@ -31,23 +31,31 @@ export async function scrapeWebsite(url: string) {
 
 export async function createLead(formData: FormData) {
   const supabase = await createClient();
+
+  // For MVP/Factory mode, we might not always have a user session if testing via scripts
+  // But we try to get one.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Unauthorized" };
+  const businessName = formData.get("businessName") as string;
+
+  if (!businessName) {
+    return { error: "Business name is required" };
+  }
 
   const leadData = {
-    user_id: user.id,
-    business_name: formData.get("businessName"),
-    website: formData.get("website"),
-    email: formData.get("email"),
-    phone: formData.get("phone"),
-    industry: formData.get("industry") || "Unknown",
-    source: formData.get("source") || "Manual",
+    // If no user is logged in (factory mode), just skip user_id or use a placeholder if DB enforces it
+    user_id: user?.id || undefined,
+    business_name: businessName,
+    website: formData.get("website") as string,
+    email: formData.get("email") as string,
+    phone: formData.get("phone") as string,
+    industry: (formData.get("industry") as string) || "Unknown",
+    source: (formData.get("source") as string) || "Manual",
     status: "new",
     quality_score: 50,
-    logo_url: formData.get("logoUrl"),
+    logo_url: formData.get("logoUrl") as string,
   };
 
   const { error } = await supabase.from("leads").insert(leadData);
@@ -55,15 +63,12 @@ export async function createLead(formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/dashboard"); // Refresh dashboard too
   return { success: true };
 }
 
 export async function updateLeadStatus(id: string, status: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
 
   // 1. Update the Lead Status
   const { error } = await supabase
@@ -82,8 +87,6 @@ export async function updateLeadStatus(id: string, status: string) {
   return { success: true };
 }
 
-// --- NEW FUNCTION (Fixes the error in columns.tsx) ---
-
 export async function simulateSaleAction(leadId: string) {
   // Logic to simulate a Stripe payment and move lead to 'subscribed'
   const result = await convertLeadToSubscription(leadId);
@@ -91,6 +94,36 @@ export async function simulateSaleAction(leadId: string) {
   // Refresh the data on the screen
   revalidatePath("/admin/leads");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/dashboard");
 
   return result;
+}
+
+// --- NEW DELETE FUNCTION ---
+// This was missing and caused your error when trying to wire up the delete button
+export async function deleteLead(leadId: string) {
+  const supabase = await createClient();
+
+  try {
+    // 1. Delete associated sites first (Clean up FK constraints)
+    // We ignore error here in case no sites exist
+    await supabase.from("sites").delete().eq("lead_id", leadId);
+    await supabase.from("generations").delete().eq("lead_id", leadId);
+    await supabase.from("email_logs").delete().eq("lead_id", leadId);
+
+    // 2. Delete the lead
+    const { error } = await supabase.from("leads").delete().eq("id", leadId);
+
+    if (error) {
+      console.error("Delete Error:", error);
+      return { success: false, error: error.message };
+    }
+
+    // 3. Refresh the UI
+    revalidatePath("/admin/leads");
+    revalidatePath("/admin/dashboard");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }

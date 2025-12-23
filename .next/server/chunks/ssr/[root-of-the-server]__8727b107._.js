@@ -242,7 +242,9 @@ function CardFooter({ className, ...props }) {
 
 __turbopack_context__.s([
     "default",
-    ()=>DashboardPage
+    ()=>DashboardPage,
+    "dynamic",
+    ()=>dynamic
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react.js [app-rsc] (ecmascript)");
@@ -261,21 +263,31 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 ;
 ;
 ;
+const dynamic = "force-dynamic";
 async function DashboardPage() {
     const cookieStore = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$headers$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["cookies"])();
     const mockUserId = cookieStore.get("mock_user_id")?.value;
     const supabase = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2f$server$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["createClient"])();
-    // 1. Fetch data for the selected business
+    // 1. Fetch data
+    // Note: For MVP, if no mockUserId, we just fetch everything to show the dashboard works
+    const leadsQuery = supabase.from("leads").select("id, status, value_estimated");
+    const subsQuery = supabase.from("subscriptions").select("status, amount");
+    const revenueQuery = supabase.from("revenue_events").select("amount, event_date").order("event_date", {
+        ascending: true
+    }).limit(30);
+    // If we had a real user system, we would filter by user_id here
+    // if (mockUserId) {
+    //   leadsQuery.eq("user_id", mockUserId);
+    //   subsQuery.eq("user_id", mockUserId);
+    // }
     const [leadsResult, subscriptionsResult, revenueResult] = await Promise.all([
-        supabase.from("leads").select("id, status, value_estimated").eq("user_id", mockUserId),
-        supabase.from("subscriptions").select("status, amount").eq("user_id", mockUserId),
-        supabase.from("revenue_events").select("amount, event_date, leads!inner(user_id)").eq("leads.user_id", mockUserId).order("event_date", {
-            ascending: true
-        }).limit(30)
+        leadsQuery,
+        subsQuery,
+        revenueQuery
     ]);
     const leads = leadsResult.data || [];
     const subscriptions = subscriptionsResult.data || [];
-    // @ts-ignore - Supabase type inference with inner joins can be complex
+    // @ts-ignore - Supabase type inference can be tricky with complex queries
     const revenueEvents = (revenueResult.data || []).map((r)=>({
             amount: Number(r.amount),
             event_date: r.event_date
@@ -285,9 +297,9 @@ async function DashboardPage() {
     const activeSubscriptions = subscriptions.filter((s)=>s.status === "active").length;
     // Calculate Revenue
     const totalRevenue = revenueEvents.reduce((sum, event)=>sum + (event.amount || 0), 0);
-    // Calculate Pipeline Value
-    const pipelineValue = leads.reduce((sum, lead)=>sum + (Number(lead.value_estimated) || 0), 0);
-    // 3. Define Metrics for Server Rendering (Icons allowed here)
+    // Calculate Pipeline Value (Mock logic: assume each lead is worth $500 if not specified)
+    const pipelineValue = leads.reduce((sum, lead)=>sum + (Number(lead.value_estimated) || 500), 0);
+    // 3. Define Metrics for Server Rendering
     const metricCards = [
         {
             title: "Total Revenue",
@@ -314,27 +326,33 @@ async function DashboardPage() {
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"]
         }
     ];
-    // 4. Prepare Pure Data for Client Component (NO ICONS/FUNCTIONS)
-    // Only pass serializable JSON data (strings, numbers, arrays, plain objects)
+    // 4. Prepare Data for Client Component
     const clientChartData = {
-        revenueSeries: revenueEvents.map((e)=>({
+        revenueSeries: revenueEvents.length > 0 ? revenueEvents.map((e)=>({
                 x: new Date(e.event_date).toLocaleDateString(),
                 y: e.amount
-            })),
+            })) : [],
         leadStatusCounts: leads.reduce((acc, lead)=>{
             acc[lead.status] = (acc[lead.status] || 0) + 1;
             return acc;
         }, {})
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "space-y-6",
+        className: "space-y-6 p-8",
         children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
-                className: "text-3xl font-bold tracking-tight",
-                children: "Dashboard"
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex items-center justify-between",
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                    className: "text-3xl font-bold tracking-tight",
+                    children: "Dashboard"
+                }, void 0, false, {
+                    fileName: "[project]/app/admin/dashboard/page.tsx",
+                    lineNumber: 130,
+                    columnNumber: 9
+                }, this)
             }, void 0, false, {
                 fileName: "[project]/app/admin/dashboard/page.tsx",
-                lineNumber: 119,
+                lineNumber: 129,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -349,20 +367,20 @@ async function DashboardPage() {
                                         children: metric.title
                                     }, void 0, false, {
                                         fileName: "[project]/app/admin/dashboard/page.tsx",
-                                        lineNumber: 126,
+                                        lineNumber: 138,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(metric.icon, {
                                         className: "h-4 w-4 text-muted-foreground"
                                     }, void 0, false, {
                                         fileName: "[project]/app/admin/dashboard/page.tsx",
-                                        lineNumber: 129,
+                                        lineNumber: 141,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/admin/dashboard/page.tsx",
-                                lineNumber: 125,
+                                lineNumber: 137,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -372,7 +390,7 @@ async function DashboardPage() {
                                         children: metric.value
                                     }, void 0, false, {
                                         fileName: "[project]/app/admin/dashboard/page.tsx",
-                                        lineNumber: 132,
+                                        lineNumber: 144,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -383,24 +401,24 @@ async function DashboardPage() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/admin/dashboard/page.tsx",
-                                        lineNumber: 133,
+                                        lineNumber: 145,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/admin/dashboard/page.tsx",
-                                lineNumber: 131,
+                                lineNumber: 143,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, metric.title, true, {
                         fileName: "[project]/app/admin/dashboard/page.tsx",
-                        lineNumber: 124,
+                        lineNumber: 136,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/app/admin/dashboard/page.tsx",
-                lineNumber: 122,
+                lineNumber: 134,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Suspense"], {
@@ -408,25 +426,25 @@ async function DashboardPage() {
                     children: "Loading charts..."
                 }, void 0, false, {
                     fileName: "[project]/app/admin/dashboard/page.tsx",
-                    lineNumber: 142,
+                    lineNumber: 154,
                     columnNumber: 27
                 }, void 0),
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$admin$2f$dashboard$2f$dashboard$2d$client$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["DashboardClient"], {
                     data: clientChartData
                 }, void 0, false, {
                     fileName: "[project]/app/admin/dashboard/page.tsx",
-                    lineNumber: 143,
+                    lineNumber: 155,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/admin/dashboard/page.tsx",
-                lineNumber: 142,
+                lineNumber: 154,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/admin/dashboard/page.tsx",
-        lineNumber: 118,
+        lineNumber: 128,
         columnNumber: 5
     }, this);
 }

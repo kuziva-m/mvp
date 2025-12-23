@@ -2,20 +2,26 @@
   "node": {
     "00104c1e859e67e008ede8afe9a80d4e5034fc7051": {
       "workers": {
-        "app/admin/email-templates/new/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/email-templates/new/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+        "app/admin/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
         },
-        "app/admin/email-templates/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/email-templates/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+        "app/admin/lead-gen/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/lead-gen/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutBusiness",
+          "filename": "app/actions/auth-mock.ts"
+        },
+        "app/admin/lead-magnet/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/lead-magnet/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
         },
         "app/admin/leads/[id]/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
@@ -26,25 +32,32 @@
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
         },
-        "app/admin/websites/page": {
-          "moduleId": "[project]/.next-internal/server/app/admin/websites/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+        "app/admin/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "logoutBusiness",
           "filename": "app/actions/auth-mock.ts"
         }
       },
       "layer": {
-        "app/admin/email-templates/new/page": "action-browser",
-        "app/admin/email-templates/page": "action-browser",
+        "app/admin/dashboard/page": "action-browser",
+        "app/admin/lead-gen/page": "action-browser",
+        "app/admin/lead-magnet/page": "action-browser",
         "app/admin/leads/[id]/page": "action-browser",
         "app/admin/leads/page": "action-browser",
-        "app/admin/websites/page": "action-browser"
+        "app/admin/page": "action-browser"
       },
       "filename": "app/actions/auth-mock.ts",
       "exportedName": "logoutBusiness"
     },
     "40e4f19266c61b84849a13df5feff893b0a245fa74": {
       "workers": {
+        "app/admin/leads/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createLead",
+          "filename": "app/admin/leads/actions.ts"
+        },
         "app/admin/leads/page": {
           "moduleId": "[project]/.next-internal/server/app/admin/leads/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
@@ -53,6 +66,7 @@
         }
       },
       "layer": {
+        "app/admin/leads/[id]/page": "rsc",
         "app/admin/leads/page": "action-browser"
       },
       "filename": "app/admin/leads/actions.ts",
@@ -60,6 +74,12 @@
     },
     "40d686ca1f173c33b6af039fb50a79f71a4cba840c": {
       "workers": {
+        "app/admin/leads/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "scrapeWebsite",
+          "filename": "app/admin/leads/actions.ts"
+        },
         "app/admin/leads/page": {
           "moduleId": "[project]/.next-internal/server/app/admin/leads/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
@@ -68,6 +88,7 @@
         }
       },
       "layer": {
+        "app/admin/leads/[id]/page": "rsc",
         "app/admin/leads/page": "action-browser"
       },
       "filename": "app/admin/leads/actions.ts",
@@ -75,6 +96,12 @@
     },
     "608cdc95df2cc41f39e4035203ea0cd363e777ca6d": {
       "workers": {
+        "app/admin/leads/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateLeadStatus",
+          "filename": "app/admin/leads/actions.ts"
+        },
         "app/admin/leads/page": {
           "moduleId": "[project]/.next-internal/server/app/admin/leads/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
@@ -83,10 +110,86 @@
         }
       },
       "layer": {
+        "app/admin/leads/[id]/page": "rsc",
         "app/admin/leads/page": "action-browser"
       },
       "filename": "app/admin/leads/actions.ts",
       "exportedName": "updateLeadStatus"
+    },
+    "40182289ed84cdcb029e95fa6787f651a4331f1aa3": {
+      "workers": {
+        "app/admin/leads/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "app/admin/leads/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/leads/[id]/page": "rsc"
+      },
+      "filename": "app/admin/leads/[id]/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "402d2736d33dd85cced9c513e4ee646dce4827f7ec": {
+      "workers": {
+        "app/admin/leads/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "simulateSaleAction",
+          "filename": "app/admin/leads/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/leads/[id]/page": "rsc"
+      },
+      "filename": "app/admin/leads/actions.ts",
+      "exportedName": "simulateSaleAction"
+    },
+    "409eb2ad4039b82fc019825ed405e6ab27169cf40c": {
+      "workers": {
+        "app/admin/leads/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/leads/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/actions/auth-mock.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/app/admin/leads/[id]/page.tsx [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/app/admin/leads/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteLead",
+          "filename": "app/admin/leads/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/leads/[id]/page": "rsc"
+      },
+      "filename": "app/admin/leads/actions.ts",
+      "exportedName": "deleteLead"
+    },
+    "40e4aa797d1a4d29a523da14f0d6411066436025f0": {
+      "workers": {
+        "app/login/page": {
+          "moduleId": "[project]/.next-internal/server/app/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/login/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "login",
+          "filename": "app/login/actions.ts"
+        }
+      },
+      "layer": {
+        "app/login/page": "action-browser"
+      },
+      "filename": "app/login/actions.ts",
+      "exportedName": "login"
+    },
+    "4019206173cd720c32ce3e73e86bd12c943dd5818b": {
+      "workers": {
+        "app/login/page": {
+          "moduleId": "[project]/.next-internal/server/app/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/login/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "signup",
+          "filename": "app/login/actions.ts"
+        }
+      },
+      "layer": {
+        "app/login/page": "action-browser"
+      },
+      "filename": "app/login/actions.ts",
+      "exportedName": "signup"
     }
   },
   "edge": {},

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -8,6 +8,7 @@ import {
   MailOpen,
   MousePointerClick,
   Reply,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,10 +23,11 @@ import { getById, query } from "@/lib/db";
 import type { Lead, Site, EmailLog } from "@/types";
 import { GenerateWebsiteButton } from "@/components/GenerateWebsiteButton";
 import SendEmailButton from "@/components/SendEmailButton";
+import { deleteLead } from "../actions"; // Import the delete action
 
 export const dynamic = "force-dynamic";
 
-// 2. FIXED: Use "type" and "Omit" to safely overwrite quality_score without errors
+// Extended type to handle optional fields and type mismatches
 type ExtendedLead = Omit<Lead, "quality_score"> & {
   updated_at?: string;
   automation_paused?: string;
@@ -42,6 +44,24 @@ interface LeadDetailPageProps {
   }>;
 }
 
+// Component for the Delete Button Form
+function DeleteButton({ id }: { id: string }) {
+  return (
+    <form
+      action={async () => {
+        "use server";
+        await deleteLead(id);
+        redirect("/admin/leads");
+      }}
+    >
+      <Button variant="destructive" size="sm" className="gap-2">
+        <Trash2 className="h-4 w-4" />
+        Delete Lead
+      </Button>
+    </form>
+  );
+}
+
 export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   const { id } = await params;
   const { data: rawLead, error } = await getById<Lead>("leads", id);
@@ -50,7 +70,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     notFound();
   }
 
-  // Cast to unknown first to bypass the strict overlap check
+  // Cast to ExtendedLead to handle optional fields safely
   const lead = rawLead as unknown as ExtendedLead;
 
   // Check if site already exists
@@ -81,13 +101,18 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/leads">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Leads
-          </Button>
-        </Link>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/leads">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Leads
+            </Button>
+          </Link>
+        </div>
+
+        {/* DELETE BUTTON ADDED HERE */}
+        <DeleteButton id={lead.id} />
       </div>
 
       {/* Title */}
@@ -527,18 +552,6 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
               </p>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Coming Soon Card */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <h3 className="font-semibold text-lg mb-2">Coming Soon</h3>
-          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-            <li>Edit lead information</li>
-            <li>Pause/resume automation</li>
-            <li>Add notes and tasks</li>
-          </ul>
         </CardContent>
       </Card>
     </div>
